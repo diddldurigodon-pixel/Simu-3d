@@ -1231,7 +1231,7 @@ function updateAnimals(dtR, simDt, time) {
     const mesh = animalMeshes[sp], S = SPECIES[sp]; let n = 0;
     for (const c of sim.creatures[sp]) {
       if (n >= MAXC) break;
-      if (c._ph === undefined) { c._ph = Math.random() * 6; c._hd = Math.random() * 6.283; c._pulse = 0; c._col = geneColor(c); }
+      if (c._ph === undefined) { c._ph = Math.random() * 6; c._hd = Math.random() * 6.283; c._pulse = c._pulse || 0; c._col = geneColor(c); }
       const spd = Math.hypot(c.vx, c.vz);
       c._ph += spd * simDt * (sp ? 2.4 : 3.0);
       if (spd > 0.12) { let d = Math.atan2(c.vx, c.vz) - c._hd; d = Math.atan2(Math.sin(d), Math.cos(d)); c._hd += d * Math.min(1, dtR * 9); }
