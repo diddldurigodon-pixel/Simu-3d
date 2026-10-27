@@ -1,0 +1,1945 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#f4f4f1">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="description" content="Simulation d'écosystème 3D : plantes, herbivores et prédateurs qui évoluent par sélection naturelle.">
+<title>Écosystème 3D</title>
+<style>
+:root{
+  --bg:#f4f4f1; --text:#1d1d1f; --text2:#6e6e73; --text3:#a1a1a6;
+  --glass:rgba(255,255,255,.68); --glass-solid:rgba(252,252,250,.94);
+  --hair:rgba(60,60,67,.13); --fill:rgba(118,118,128,.13); --fill2:rgba(118,118,128,.07);
+  --accent:#007aff; --plant:#34c759; --herb:#3b82f6; --pred:#ff6b3d; --warn:#ff9f0a; --danger:#ff3b30;
+  --shadow:0 12px 34px rgba(28,40,28,.13), 0 2px 8px rgba(28,40,28,.06);
+  --blur:saturate(180%) blur(18px);
+  --st:env(safe-area-inset-top,0px); --sb:env(safe-area-inset-bottom,0px);
+  --font:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:var(--font);
+  -webkit-font-smoothing:antialiased;overscroll-behavior:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
+button{font-family:inherit;color:inherit;cursor:pointer}
+#c{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:none;outline:none}
+.glass{background:var(--glass);-webkit-backdrop-filter:var(--blur);backdrop-filter:var(--blur);
+  border:1px solid rgba(255,255,255,.75);box-shadow:var(--shadow)}
+body.lowfx .glass{-webkit-backdrop-filter:none;backdrop-filter:none;background:var(--glass-solid)}
+.hidden{display:none!important}
+
+/* ---------- Barre du haut ---------- */
+#topbar{position:fixed;top:calc(var(--st) + 10px);left:50%;transform:translateX(-50%);z-index:10;
+  display:flex;align-items:center;gap:4px;padding:6px 8px;border-radius:999px;white-space:nowrap}
+.pop{display:flex;align-items:center;gap:7px;padding:4px 9px;border-radius:999px}
+.pop b{font-size:16px;font-weight:650;font-variant-numeric:tabular-nums;min-width:22px}
+.pop small{display:block;font-size:10px;color:var(--text2);font-weight:500;margin-top:-1px}
+.pop .num{display:flex;flex-direction:column;line-height:1.15}
+.ico{width:12px;height:12px;border-radius:50%;flex:none}
+.ico.plant{background:var(--plant)} .ico.herb{background:var(--herb)}
+.ico.pred{width:0;height:0;border-radius:0;border-left:7px solid transparent;border-right:7px solid transparent;border-bottom:12px solid var(--pred)}
+#topbar .sep{width:1px;height:26px;background:var(--hair);margin:0 2px}
+#clock{display:flex;align-items:center;gap:5px;padding:4px 8px 4px 6px;font-size:14px;font-weight:600;font-variant-numeric:tabular-nums;color:var(--text2)}
+#dayIcon{font-size:15px}
+#catBanner{position:fixed;top:calc(var(--st) + 68px);left:50%;transform:translateX(-50%);z-index:9;white-space:nowrap;
+  padding:8px 14px;border-radius:999px;font-size:14px;font-weight:600;display:flex;align-items:center;gap:8px}
+#catBanner .bar{width:60px;height:5px;border-radius:3px;background:var(--fill);overflow:hidden}
+#catBanner .bar i{display:block;height:100%;background:var(--warn);border-radius:3px}
+
+/* ---------- Fiche créature ---------- */
+#card{position:fixed;top:calc(var(--st) + 68px);left:12px;right:12px;max-width:390px;margin:0 auto;z-index:12;
+  padding:14px 16px 14px;border-radius:24px;transition:opacity .22s,transform .22s}
+#card.off{opacity:0;transform:translateY(-10px) scale(.98);pointer-events:none}
+.card-head{display:flex;align-items:center;gap:12px}
+.avatar{width:40px;height:40px;border-radius:50%;flex:none;box-shadow:inset 0 -3px 6px rgba(0,0,0,.12)}
+.avatar.pred{border-radius:50% 50% 50% 50% / 30% 30% 70% 70%}
+.card-title{font-size:17px;font-weight:700;letter-spacing:-.2px}
+.card-sub{font-size:13px;color:var(--text2);margin-top:1px}
+.card-head .grow{flex:1;min-width:0}
+.icon-btn{width:40px;height:40px;border-radius:50%;border:0;background:var(--fill);display:grid;place-items:center;flex:none}
+.icon-btn:active{transform:scale(.92)}
+.card-stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:12px}
+.stat{background:var(--fill2);border-radius:14px;padding:8px 10px}
+.stat span{display:block;font-size:11px;color:var(--text2);font-weight:500}
+.stat b{font-size:15px;font-weight:650;font-variant-numeric:tabular-nums}
+.ebar{height:6px;border-radius:3px;background:var(--fill);margin-top:5px;overflow:hidden}
+.ebar i{display:block;height:100%;border-radius:3px;background:var(--plant);transition:width .2s}
+.genes{margin-top:10px;display:grid;gap:7px}
+.gene{display:grid;grid-template-columns:62px 1fr auto;align-items:center;gap:10px;font-size:13px}
+.gene span{color:var(--text2)}
+.gene .gbar{height:6px;border-radius:3px;background:var(--fill);position:relative;overflow:hidden}
+.gene .gbar i{position:absolute;left:0;top:0;bottom:0;border-radius:3px}
+.gene .gbar u{position:absolute;top:-2px;bottom:-2px;width:2px;background:var(--text3);left:33.3%}
+.gene b{font-variant-numeric:tabular-nums;font-weight:600;min-width:92px;text-align:right}
+.gene b em{font-style:normal;font-weight:500;font-size:12px}
+.up{color:#248a3d} .down{color:#d70015}
+#card .follow{margin-top:10px;display:flex;align-items:center;justify-content:space-between;font-size:13px;color:var(--text2)}
+
+/* ---------- Bas de l'écran : barre d'outils + courbes ---------- */
+#bottom{position:fixed;left:0;right:0;bottom:0;z-index:11;display:flex;flex-direction:column;align-items:center;gap:10px;
+  padding:0 10px calc(var(--sb) + 10px);pointer-events:none}
+#bottom > *{pointer-events:auto}
+#bottom{transition:opacity .25s}
+body.sheet-open #bottom{opacity:0;pointer-events:none}
+body.sheet-open #bottom > *{pointer-events:none}
+#toolbar{display:flex;gap:4px;padding:5px;border-radius:999px}
+.tb{width:54px;height:54px;border-radius:50%;border:0;background:transparent;display:grid;place-items:center;
+  font-size:15px;font-weight:700;font-variant-numeric:tabular-nums;transition:transform .12s,background .12s}
+.tb:active{background:var(--fill);transform:scale(.92)}
+.tb svg{width:24px;height:24px}
+.tb.accent{color:var(--accent)}
+#bCat{color:var(--warn)}
+#charts{width:min(100%,680px);border-radius:24px;overflow:hidden}
+#chartHandle{width:100%;border:0;background:transparent;display:flex;align-items:center;gap:10px;padding:12px 18px;font-size:15px;font-weight:650}
+#chartHandle .mini{flex:1;height:22px}
+#chartHandle svg.chev{width:18px;height:18px;transition:transform .25s;color:var(--text2)}
+#charts.open #chartHandle svg.chev{transform:rotate(180deg)}
+.chart-body{display:none;padding:0 12px 12px}
+#charts.open .chart-body{display:block}
+.tabs{display:flex;gap:4px;padding:3px;background:var(--fill2);border-radius:12px;overflow-x:auto;scrollbar-width:none}
+.tabs::-webkit-scrollbar{display:none}
+.tabs button{flex:1 1 auto;min-width:max-content;border:0;background:transparent;padding:9px 7px;border-radius:9px;font-size:12.5px;font-weight:600;color:var(--text2)}
+.tabs button.on{background:#fff;color:var(--text);box-shadow:0 1px 4px rgba(0,0,0,.1)}
+.subrow{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-top:8px}
+.chip{border:0;border-radius:999px;padding:8px 12px;font-size:13px;font-weight:600;background:var(--fill2);color:var(--text2);display:inline-flex;align-items:center;gap:6px;min-height:36px}
+.chip.on{background:rgba(0,122,255,.12);color:var(--accent)}
+#chartSub .chip{min-height:32px;padding:6px 10px;font-size:12.5px}
+#chartSub .note{font-size:12px}
+.chip i{width:14px;height:3px;border-radius:2px;display:inline-block}
+.chip i.dash{background:none!important;border-top:3px dashed currentColor;height:0}
+.chip.off{opacity:.45}
+.legend{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px}
+.legend{gap:4px}
+.legend .chip{min-height:30px;padding:4px 8px;font-size:12px;gap:5px}
+.legend .chip i{width:12px}
+.chart-wrap{position:relative;height:clamp(150px,24vh,240px);margin-top:6px;background:rgba(255,255,255,.55);border-radius:14px}
+#chart{position:absolute;inset:0;width:100%;height:100%;touch-action:none}
+#chartLive{position:absolute;right:8px;top:8px}
+.chart-foot{display:flex;align-items:center;gap:8px;margin-top:8px}
+.chart-foot .hint{font-size:11px;color:var(--text3);flex:1;text-align:right}
+.btn{border:0;border-radius:12px;padding:10px 14px;font-size:14px;font-weight:600;background:var(--fill);min-height:44px;display:inline-flex;align-items:center;gap:6px;justify-content:center}
+.btn:active{transform:scale(.97)}
+.btn.primary{background:var(--accent);color:#fff}
+
+/* ---------- Panneau de réglages ---------- */
+#settings{position:fixed;left:0;right:0;bottom:0;height:64vh;z-index:30;display:flex;flex-direction:column;
+  border-radius:28px 28px 0 0;transform:translateY(105%);transition:transform .38s cubic-bezier(.2,.9,.25,1);
+  border-bottom:0;padding-bottom:var(--sb);visibility:hidden;background:rgba(250,250,248,.86)}
+#settings.open{transform:none;visibility:visible}
+@media (min-width:760px) and (min-aspect-ratio:1/1){
+  #settings{left:auto;top:12px;right:12px;bottom:12px;width:390px;height:auto;border-radius:26px;transform:translateX(110%);border-bottom:1px solid rgba(255,255,255,.75)}
+  #card{left:12px;right:auto;width:360px;margin:0}
+}
+.grabber{display:block;width:40px;height:5px;border-radius:3px;background:rgba(60,60,67,.25);margin:8px auto 0;border:0;padding:0}
+.sheet-top{padding:4px 16px 8px;border-bottom:1px solid var(--hair)}
+.sheet-title{display:flex;align-items:center;justify-content:space-between;margin:4px 0 8px}
+.sheet-title h2{margin:0;font-size:21px;font-weight:750;letter-spacing:-.4px}
+.actions{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.act{border:0;border-radius:14px;background:var(--fill2);padding:7px 4px;font-size:12px;font-weight:600;display:flex;flex-direction:column;align-items:center;gap:3px;min-height:54px;justify-content:center}
+.act svg{width:22px;height:22px}
+.act:active{transform:scale(.95)}
+.act.on{color:var(--accent);background:rgba(0,122,255,.1)}
+.presets{display:flex;gap:6px;overflow-x:auto;margin:10px -16px 0;padding:0 16px;scrollbar-width:none}
+.presets::-webkit-scrollbar{display:none}
+.presets .chip{flex:none}
+#sTabs{margin-top:10px}
+.sheet-scroll{flex:1;overflow-y:auto;padding:6px 16px 24px;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
+.note{font-size:12.5px;color:var(--text2);line-height:1.4;margin:8px 2px 4px}
+.row{padding:10px 0 6px;border-bottom:1px solid var(--hair)}
+.row:last-child{border-bottom:0}
+.row-top{display:flex;justify-content:space-between;align-items:baseline;gap:8px;font-size:15px}
+.row-top label{font-weight:500}
+.row-top output{font-weight:650;font-variant-numeric:tabular-nums;color:var(--accent);white-space:nowrap}
+.row small{display:block;font-size:11.5px;color:var(--text3);margin-top:1px}
+.row.flex{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 0}
+.row .reset-hint{color:var(--warn)}
+input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:36px;background:transparent;margin:2px 0 0;touch-action:pan-y}
+input[type=range]:focus{outline:none}
+input[type=range]::-webkit-slider-runnable-track{height:6px;border-radius:3px;background:linear-gradient(to right,var(--accent) var(--p,50%),rgba(120,120,128,.2) var(--p,50%))}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:28px;height:28px;border-radius:50%;background:#fff;margin-top:-11px;
+  box-shadow:0 3px 8px rgba(0,0,0,.18),0 0 0 .5px rgba(0,0,0,.08)}
+input[type=range]::-moz-range-track{height:6px;border-radius:3px;background:rgba(120,120,128,.2)}
+input[type=range]::-moz-range-progress{height:6px;border-radius:3px;background:var(--accent)}
+input[type=range]::-moz-range-thumb{width:28px;height:28px;border-radius:50%;background:#fff;border:0;box-shadow:0 3px 8px rgba(0,0,0,.18)}
+.switch{position:relative;width:51px;height:31px;flex:none}
+.switch input{position:absolute;opacity:0;inset:0;margin:0;cursor:pointer}
+.switch span{position:absolute;inset:0;border-radius:999px;background:rgba(120,120,128,.25);transition:background .2s;pointer-events:none}
+.switch span::after{content:"";position:absolute;top:2px;left:2px;width:27px;height:27px;border-radius:50%;background:#fff;box-shadow:0 3px 8px rgba(0,0,0,.15);transition:transform .22s}
+.switch input:checked + span{background:var(--plant)}
+.switch input:checked + span::after{transform:translateX(20px)}
+.seg{display:flex;padding:3px;background:var(--fill2);border-radius:10px}
+.seg button{border:0;background:transparent;padding:7px 10px;border-radius:8px;font-size:13px;font-weight:600;color:var(--text2)}
+.seg button.on{background:#fff;color:var(--text);box-shadow:0 1px 4px rgba(0,0,0,.1)}
+
+/* ---------- Feuille catastrophe ---------- */
+.overlay{position:fixed;inset:0;z-index:40;background:rgba(20,20,25,.18);display:flex;align-items:flex-end;justify-content:center;
+  padding:12px 12px calc(var(--sb) + 12px);animation:fade .2s}
+.action-sheet{width:min(100%,440px);border-radius:26px;padding:14px;animation:up .28s cubic-bezier(.2,.9,.25,1);background:rgba(246,246,244,.9)}
+.action-sheet h3{margin:4px 6px 4px;font-size:18px}
+.action-sheet p{margin:0 6px 10px;font-size:13px;color:var(--text2)}
+.cat-opt{width:100%;border:0;background:rgba(255,255,255,.92);border-radius:18px;padding:12px 14px;margin-top:8px;display:flex;align-items:center;gap:14px;text-align:left;min-height:64px}
+.cat-opt:active{transform:scale(.98)}
+.cat-opt .emo{font-size:28px;width:40px;text-align:center}
+.cat-opt b{display:block;font-size:16px}
+.cat-opt small{display:block;font-size:12.5px;color:var(--text2);margin-top:2px}
+.cancel{width:100%;border:0;border-radius:18px;background:rgba(255,255,255,.95);margin-top:10px;min-height:54px;font-size:16px;font-weight:650;color:var(--accent)}
+@keyframes fade{from{opacity:0}} @keyframes up{from{transform:translateY(40px);opacity:0}}
+
+/* ---------- Divers ---------- */
+#toast{position:fixed;left:50%;top:calc(var(--st) + 70px);transform:translate(-50%,-6px);z-index:50;padding:10px 16px;border-radius:999px;
+  font-size:14px;font-weight:600;opacity:0;transition:opacity .25s,transform .25s;pointer-events:none;white-space:nowrap}
+#toast.show{opacity:1;transform:translate(-50%,0)}
+#press{position:fixed;z-index:20;width:76px;height:76px;margin:-38px 0 0 -38px;border-radius:50%;pointer-events:none;opacity:0;
+  background:conic-gradient(var(--pred) calc(var(--a,0)*1turn),rgba(255,107,61,.15) 0);
+  -webkit-mask:radial-gradient(circle,transparent 30px,#000 31px);mask:radial-gradient(circle,transparent 30px,#000 31px);transition:opacity .15s}
+#press.on{opacity:1}
+#hint{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(var(--sb) + 150px);z-index:9;padding:12px 16px;border-radius:20px;
+  font-size:13.5px;line-height:1.55;width:max-content;max-width:calc(100% - 24px);transition:opacity .5s}
+#hint b{font-weight:650}
+#hint.fade{opacity:0;pointer-events:none}
+#loading{position:fixed;inset:0;z-index:60;display:grid;place-items:center;background:var(--bg);transition:opacity .5s;text-align:center;padding:24px}
+#loading .spin{width:34px;height:34px;border-radius:50%;border:3px solid rgba(0,0,0,.08);border-top-color:var(--accent);animation:spin 0.9s linear infinite;margin:0 auto 14px}
+#loading p{margin:0;color:var(--text2);font-size:15px}
+@keyframes spin{to{transform:rotate(1turn)}}
+</style>
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+} }
+</script>
+</head>
+<body>
+<canvas id="c" aria-label="Monde 3D de l'écosystème"></canvas>
+
+<header id="topbar" class="glass" aria-label="Populations">
+  <div class="pop"><span class="ico plant"></span><span class="num"><b id="nPlants">0</b><small>plantes</small></span></div>
+  <div class="pop"><span class="ico herb"></span><span class="num"><b id="nHerbs">0</b><small>herbivores</small></span></div>
+  <div class="pop"><span class="ico pred"></span><span class="num"><b id="nPreds">0</b><small>prédateurs</small></span></div>
+  <div class="sep"></div>
+  <div id="clock"><span id="dayIcon">☀️</span><span id="simTime">0:00</span></div>
+</header>
+<div id="catBanner" class="glass hidden"><span id="catText"></span><span class="bar"><i id="catBar"></i></span></div>
+
+<section id="card" class="glass off" aria-live="polite">
+  <div class="card-head">
+    <div class="avatar" id="cAvatar"></div>
+    <div class="grow"><div class="card-title" id="cTitle">—</div><div class="card-sub" id="cSub">—</div></div>
+    <button class="icon-btn" id="cClose" aria-label="Fermer la fiche"><svg width="14" height="14" viewBox="0 0 14 14"><path d="M2 2l10 10M12 2L2 12" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg></button>
+  </div>
+  <div class="card-stats">
+    <div class="stat"><span>Âge</span><b id="cAge">—</b></div>
+    <div class="stat"><span>Petits</span><b id="cKids">—</b></div>
+    <div class="stat"><span>Énergie</span><b id="cEnergy">—</b><div class="ebar"><i id="cEbar"></i></div></div>
+  </div>
+  <div class="genes" id="cGenes"></div>
+  <div class="follow"><span>La caméra suit cet animal</span><label class="switch"><input type="checkbox" id="cFollow" checked><span></span></label></div>
+</section>
+
+<div id="bottom">
+  <nav id="toolbar" class="glass" aria-label="Commandes">
+    <button class="tb" id="bPause" aria-label="Pause"></button>
+    <button class="tb accent" id="bSpeed" aria-label="Vitesse de simulation">1×</button>
+    <button class="tb" id="bCenter" aria-label="Recentrer la caméra"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2.2" fill="currentColor"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg></button>
+    <button class="tb" id="bCat" aria-label="Catastrophe"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M13.5 2 4 13.5h6.5L9 22l10-12h-6.6z"/></svg></button>
+    <button class="tb" id="bSettings" aria-label="Réglages"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2.2"/><circle cx="10" cy="17" r="2.2"/></svg></button>
+  </nav>
+  <section id="charts" class="glass">
+    <button id="chartHandle" aria-expanded="false"><span>Courbes</span><canvas class="mini" id="miniChart"></canvas><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 15l6-6 6 6"/></svg></button>
+    <div class="chart-body">
+      <div class="tabs" id="chartTabs">
+        <button data-tab="pop" class="on">Populations</button>
+        <button data-tab="energy">Énergie</button>
+        <button data-tab="genes">Gènes</button>
+        <button data-tab="compare">Comparer</button>
+      </div>
+      <div class="subrow" id="chartSub"></div>
+      <div class="legend" id="legend"></div>
+      <div class="chart-wrap"><canvas id="chart"></canvas><button class="chip on hidden" id="chartLive">↻ Direct</button></div>
+      <div class="chart-foot"><button class="btn" id="bExport"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg>Exporter CSV</button><span class="hint">Pince pour zoomer · glisse pour te déplacer · double-tape pour revenir</span></div>
+    </div>
+  </section>
+</div>
+
+<section id="settings" class="glass" aria-label="Réglages">
+  <div class="sheet-top">
+    <button class="grabber" id="sGrab" aria-label="Fermer"></button>
+    <div class="sheet-title"><h2>Réglages</h2><button class="icon-btn" id="sClose" aria-label="Fermer les réglages"><svg width="14" height="14" viewBox="0 0 14 14"><path d="M2 2l10 10M12 2L2 12" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg></button></div>
+    <div class="actions">
+      <button class="act" id="sPause"></button>
+      <button class="act" id="sReset"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>Reset</button>
+      <button class="act" id="sSave"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3h11l3 3v15H5z"/><path d="M8 3v6h8V3M8 21v-7h8v7"/></svg>Sauver</button>
+      <button class="act" id="sLoad"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>Charger</button>
+    </div>
+    <div class="presets" id="presets"></div>
+    <div class="tabs" id="sTabs"></div>
+  </div>
+  <div class="sheet-scroll" id="sBody"></div>
+</section>
+
+<div id="catSheet" class="overlay hidden">
+  <div class="action-sheet glass" role="dialog" aria-label="Catastrophe">
+    <h3>Déclencher une catastrophe</h3>
+    <p>Observe comment l'écosystème réagit… et s'adapte.</p>
+    <button class="cat-opt" data-cat="drought"><span class="emo">☀️</span><span><b>Sécheresse</b><small>30 s : les plantes poussent à peine et certaines se dessèchent</small></span></button>
+    <button class="cat-opt" data-cat="epidemic"><span class="emo">🦠</span><span><b>Épidémie</b><small>25 s : une maladie contagieuse épuise les animaux (les gros résistent mieux)</small></span></button>
+    <button class="cat-opt" data-cat="rain"><span class="emo">🌧️</span><span><b>Pluie</b><small>25 s : les plantes poussent beaucoup plus vite et plus nombreuses</small></span></button>
+    <button class="cancel" id="catCancel">Annuler</button>
+  </div>
+</div>
+
+<div id="toast" class="glass"></div>
+<div id="press"></div>
+<div id="hint" class="glass hidden">👆 <b>Touche le sol</b> : ajoute de la nourriture<br>✋ <b>Appui long</b> : ajoute un prédateur<br>🐾 <b>Touche un animal</b> : affiche sa fiche</div>
+<div id="loading"><div><div class="spin"></div><p id="loadMsg">Création du monde…</p></div></div>
+<script>
+  // Si la 3D ne se charge pas (pas de connexion), on l'explique au lieu de rester bloqué
+  setTimeout(function () { if (!window.__ecoStarted) { var m = document.getElementById('loadMsg'); if (m) m.innerHTML = 'Impossible de charger le moteur 3D.<br>Vérifie ta connexion internet puis recharge la page.'; } }, 12000);
+</script>
+<script id="sim-core">
+"use strict";
+/* ============================================================
+   CŒUR DE LA SIMULATION (aucune dépendance au DOM ni à la 3D)
+   ============================================================ */
+const SimCore = (() => {
+  const DEFAULTS = Object.freeze({
+    plantGrowth: 1, plantMax: 320,
+    hCount: 45, hSpeed: 3, hVision: 7, hGain: 18, hCost: 1, hRepro: 48, hLife: 80,
+    pCount: 7, pSpeed: 3.6, pVision: 10, pGain: 39, pCost: 1, pRepro: 74, pLife: 120,
+    mutRate: 0.3, mutStrength: 0.1,
+    worldSize: 26, simSpeed: 1, maxCreatures: 300, dayNight: true, dayLength: 120, respawn: true,
+  });
+
+  const PRESETS = [
+    { id: 'equilibre', name: 'Équilibré', values: {} },
+    { id: 'famine', name: 'Famine', values: { plantGrowth: 0.5, plantMax: 130, hCount: 60, pCount: 8 } },
+    { id: 'explosion', name: 'Explosion de vie', values: { plantGrowth: 2.5, plantMax: 520, hRepro: 38, pRepro: 62, hCount: 80, pCount: 10, hLife: 100 } },
+    { id: 'chasse', name: 'Chasse intense', values: { pCount: 18, pSpeed: 4.4, pVision: 14, pGain: 55, hCount: 70, plantGrowth: 1.4 } },
+  ];
+
+  // 0 = herbivore, 1 = prédateur
+  const SPECIES = [
+    { name: 'Herbivore', speed: 'hSpeed', vision: 'hVision', gain: 'hGain', cost: 'hCost', repro: 'hRepro', life: 'hLife', count: 'hCount', maturity: 10, radius: 0.42, reproCD: 5 },
+    { name: 'Prédateur', speed: 'pSpeed', vision: 'pVision', gain: 'pGain', cost: 'pCost', repro: 'pRepro', life: 'pLife', count: 'pCount', maturity: 15, radius: 0.5, reproCD: 18 },
+  ];
+  const GENE_KEYS = ['speed', 'vision', 'size'];
+  // Les gènes sont des facteurs (1 = valeur de départ du curseur)
+  const GENE_LIM = { speed: [0.3, 3], vision: [0.3, 3], size: [0.45, 2.5] };
+  const COST = { basal: [0.32, 0.49], muscle: 0.05, vision: 0.12, move: 0.55, refSpeed: 3, refVision: 8, maxE: [1.3, 1.15] };
+  const PLANT = { grow: 0.075, rate: 20, life: 120 };
+  // Constantes de comportement (ajustées pour un écosystème stable)
+  const TUNE = { eatTime: 1.2, digest: 2.9, giveUp: 4, rest: 2, killBase: 0.53, wander: 0.4, seekFrac: 0.7, share: 0.45, stealth: 0.4, sprintRange: 4.5, sprint: 1.25, stalk: 0.55, territory: 10, crowd: 1, herdRadius: 4.5, herdCrowd: 3, huntRate: 0.5, huntK: 6.3, edible: 0.35 };
+  const CAT_DURATION = { drought: 30, epidemic: 25, rain: 25 };
+
+  function mulberry32(a) {
+    return function () {
+      a |= 0; a = (a + 0x6D2B79F5) | 0;
+      let t = Math.imul(a ^ (a >>> 15), 1 | a);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+  function smoothstep(a, b, x) { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t); }
+
+  // Relief : un dôme doux + quelques ondulations, qui s'annulent au bord
+  function heightAt(x, z, R) {
+    const u = Math.sqrt(x * x + z * z) / R;
+    const n = 0.55 * Math.sin(0.21 * x + 1.3) * Math.cos(0.17 * z - 0.4)
+            + 0.30 * Math.sin(0.37 * x - 0.33 * z + 2.1)
+            + 0.18 * Math.cos(0.53 * z + 0.47 * x + 0.7);
+    return 0.9 * (1 - u * u) + 1.3 * n * (1 - smoothstep(0.7, 1, u));
+  }
+
+  class Grid {
+    constructor(cell) { this.cell = cell; this.cols = 1; this.off = 0; this.cells = []; }
+    reset(R) {
+      this.off = R + 2;
+      this.cols = Math.max(1, Math.ceil((2 * R + 4) / this.cell));
+      const n = this.cols * this.cols;
+      while (this.cells.length < n) this.cells.push([]);
+      for (let i = 0; i < n; i++) this.cells[i].length = 0;
+    }
+    idx(v) { const i = Math.floor((v + this.off) / this.cell); return i < 0 ? 0 : i >= this.cols ? this.cols - 1 : i; }
+    add(e) { this.cells[this.idx(e.z) * this.cols + this.idx(e.x)].push(e); }
+    query(x, z, r, out) {
+      out.length = 0;
+      const x0 = this.idx(x - r), x1 = this.idx(x + r), z0 = this.idx(z - r), z1 = this.idx(z + r);
+      for (let iz = z0; iz <= z1; iz++) for (let ix = x0; ix <= x1; ix++) {
+        const a = this.cells[iz * this.cols + ix];
+        for (let k = 0; k < a.length; k++) out.push(a[k]);
+      }
+      return out;
+    }
+    nearest(x, z, r, filter) {
+      let best = null, bd = r * r;
+      const x0 = this.idx(x - r), x1 = this.idx(x + r), z0 = this.idx(z - r), z1 = this.idx(z + r);
+      for (let iz = z0; iz <= z1; iz++) for (let ix = x0; ix <= x1; ix++) {
+        const a = this.cells[iz * this.cols + ix];
+        for (let k = 0; k < a.length; k++) {
+          const e = a[k], dx = e.x - x, dz = e.z - z, d2 = dx * dx + dz * dz;
+          if (d2 < bd && filter(e)) { bd = d2; best = e; }
+        }
+      }
+      return best;
+    }
+  }
+
+  function createSim(initParams, seed) {
+    const P = Object.assign({}, DEFAULTS, initParams);
+    let rng = mulberry32(seed >>> 0);
+    const gauss = () => { let u = 0; while (u === 0) u = rng(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(6.283185307 * rng()); };
+    const gPlants = new Grid(4), gHerb = new Grid(5), gPred = new Grid(5);
+    const tmp = [], tmpParents = [];
+    const ctx = { alive: 0, nPlants: 0, heat: 1, R: P.worldSize };
+
+    const sim = {
+      params: P, t: 0, plants: [], creatures: [[], []], events: [], nextId: 1,
+      cat: null, extinctT: [0, 0],
+      totals: null,
+    };
+
+    const clampG = (k, v) => Math.min(GENE_LIM[k][1], Math.max(GENE_LIM[k][0], v));
+    const baseGenes = () => ({ speed: clampG('speed', 1 + gauss() * 0.06), vision: clampG('vision', 1 + gauss() * 0.06), size: clampG('size', 1 + gauss() * 0.06) });
+    function mutateGenes(g) {
+      const o = {};
+      for (const k of GENE_KEYS) { let v = g[k]; if (rng() < P.mutRate) v *= 1 + gauss() * P.mutStrength; o[k] = clampG(k, v); }
+      return o;
+    }
+    function meanGenes(sp) {
+      const arr = sim.creatures[sp]; const m = { speed: 0, vision: 0, size: 0 }; let n = 0;
+      for (const c of arr) if (!c.dead) { n++; for (const k of GENE_KEYS) m[k] += c.genes[k]; }
+      if (!n) return baseGenes();
+      for (const k of GENE_KEYS) m[k] = clampG(k, m[k] / n * (1 + gauss() * 0.04));
+      return m;
+    }
+    function randInDisc(rMax) { const a = rng() * 6.283185307, r = Math.sqrt(rng()) * rMax; return [Math.cos(a) * r, Math.sin(a) * r]; }
+    function clampDisc(o, lim) { const r = Math.hypot(o.x, o.z); if (r > lim) { o.x *= lim / r; o.z *= lim / r; } }
+
+    // type : 0 = arbre, 1 = buisson, 2 = baies (nourriture ajoutée au doigt)
+    function newPlant(x, z, growth, type) {
+      const p = { id: sim.nextId++, x, z, growth, age: 0, lifeF: 0.75 + rng() * 0.5, type, rot: rng() * 6.283, eater: null, dead: false, dyingT: 0, cause: null, born: sim.t };
+      sim.plants.push(p);
+      return p;
+    }
+    function newCreature(sp, x, z, genes, energy, gen) {
+      const c = {
+        id: sim.nextId++, sp, x, z, vx: 0, vz: 0, wa: rng() * 6.283, energy, age: 0, lifeF: 0.85 + rng() * 0.3,
+        genes, gen, kids: 0, state: 'wander', target: null, timer: 0, thinkT: rng() * 0.15, reproCD: 0, boostT: 0, chaseT: 0,
+        fx: 0, fz: 0, sprint: false, hunter: null, infected: 0, immune: false, dead: false, dyingT: 0, cause: null, born: sim.t,
+      };
+      sim.creatures[sp].push(c);
+      return c;
+    }
+    function killPlant(p, cause) {
+      p.dead = true; p.dyingT = 0.6; p.cause = cause; p.eater = null;
+      sim.events.push({ type: 'plantDeath', cause, x: p.x, z: p.z, ptype: p.type });
+    }
+    function killCreature(c, cause) {
+      c.dead = true; c.dyingT = 0.7; c.cause = cause; c.diedAt = sim.t;
+      if (c.target && c.target.eater === c) c.target.eater = null;
+      c.target = null;
+      ctx.alive--;
+      sim.totals.deaths[cause][c.sp]++;
+      sim.events.push({ type: 'death', sp: c.sp, cause, x: c.x, z: c.z, id: c.id, size: c.genes.size });
+    }
+
+    sim.daylight = () => {
+      if (!P.dayNight) return 1;
+      return smoothstep(-0.5, 0.25, Math.sin(sim.dayPhase() * 6.283185307));
+    };
+    // 0 = lever du soleil, 0.25 = midi, 0.5 = coucher, 0.75 = minuit
+    sim.dayPhase = () => P.dayNight ? (sim.t / P.dayLength + 0.06) % 1 : 0.18;
+
+    sim.reset = function (newSeed) {
+      if (newSeed != null) rng = mulberry32(newSeed >>> 0);
+      sim.t = 0; sim.plants.length = 0; sim.creatures[0].length = 0; sim.creatures[1].length = 0;
+      sim.events.length = 0; sim.cat = null; sim.extinctT = [0, 0];
+      sim.totals = { births: [0, 0], deaths: { starve: [0, 0], old: [0, 0], eaten: [0, 0], sick: [0, 0] } };
+      const R = P.worldSize;
+      const nP = Math.round(P.plantMax * 0.6);
+      for (let i = 0; i < nP; i++) {
+        const [x, z] = randInDisc(R - 1.2);
+        const p = newPlant(x, z, 0.3 + rng() * 0.7, rng() < 0.4 ? 0 : 1);
+        p.age = rng() * PLANT.life * 0.7;
+      }
+      for (let sp = 0; sp < 2; sp++) {
+        const S = SPECIES[sp];
+        for (let i = 0; i < P[S.count]; i++) {
+          const [x, z] = randInDisc(R * 0.88);
+          const c = newCreature(sp, x, z, baseGenes(), P[S.repro] * (0.35 + rng() * 0.25), 0);
+          c.age = S.maturity * 0.5 + rng() * P[S.life] * 0.35;
+        }
+      }
+      ctx.alive = sim.creatures[0].length + sim.creatures[1].length;
+    };
+
+    function thinkHerb(c, vision, maxE) {
+      if (c.infected > 0) spread(c, gHerb);
+      let fx = 0, fz = 0, threat = false;
+      const v2 = vision * vision;
+      const near = gPred.query(c.x, c.z, vision, tmp);
+      for (let i = 0; i < near.length; i++) {
+        const p = near[i];
+        if (p.dead) continue;
+        const dx = c.x - p.x, dz = c.z - p.z, d2 = dx * dx + dz * dz;
+        // Un prédateur qui traque discrètement n'est repéré qu'à mi-distance de vision
+        if (d2 > (p.sprint ? v2 : v2 * TUNE.stealth)) continue;
+        const w = 1 / (d2 + 0.25);
+        fx += dx * w; fz += dz * w; threat = true;
+      }
+      if (threat) {
+        if (c.target && c.target.eater === c) c.target.eater = null;
+        c.target = null; c.state = 'flee';
+        const l = Math.hypot(fx, fz) || 1; c.fx = fx / l; c.fz = fz / l;
+        return;
+      }
+      if (c.state === 'flee') c.state = 'wander';
+      if (c.energy >= maxE) { if (c.state === 'seek') { c.state = 'wander'; c.target = null; } return; }
+      if (c.state === 'seek' && c.target && !c.target.dead && (!c.target.eater || c.target.eater === c)) return;
+      const p = gPlants.nearest(c.x, c.z, vision, q => !q.dead && q.growth > TUNE.edible && (!q.eater || q.eater === c));
+      if (p) { c.state = 'seek'; c.target = p; } else { c.state = 'wander'; c.target = null; }
+    }
+
+    function thinkPred(c, vision, maxE) {
+      if (c.infected > 0) spread(c, gPred);
+      if (c.energy > maxE * 0.9) { if (c.state === 'hunt') { c.state = 'wander'; c.target = null; } return; }
+      if (c.state === 'hunt' && c.target && !c.target.dead) {
+        const dx = c.target.x - c.x, dz = c.target.z - c.z;
+        if (dx * dx + dz * dz < vision * vision * 1.56) return;
+      }
+      if (c.state === 'hunt') { c.state = 'wander'; c.target = null; }
+      // Une proie n'est chassée que par un seul prédateur à la fois
+      const free = q => !q.dead && (!q.hunter || q.hunter === c || q.hunter.dead || q.hunter.target !== q);
+      const near = gHerb.query(c.x, c.z, vision, tmp), v2 = vision * vision;
+      let n = 0;
+      for (let i = 0; i < near.length; i++) { const q = near[i], dx = q.x - c.x, dz = q.z - c.z; if (dx * dx + dz * dz < v2 && free(q)) n++; }
+      if (!n) return;
+      // Chasse opportuniste : plus il voit de proies, plus il se lance vite (les proies rares sont épargnées)
+      const hunger = 1 + Math.max(0, 1 - c.energy / P[SPECIES[1].repro]);
+      if (rng() > TUNE.huntRate * hunger * 0.16 * (n * n) / (n * n + TUNE.huntK * TUNE.huntK)) return;
+      const h = gHerb.nearest(c.x, c.z, vision, free);
+      if (h) { c.state = 'hunt'; c.target = h; h.hunter = c; }
+    }
+
+    function spread(c, grid) {
+      if (!sim.cat || sim.cat.type !== 'epidemic') return;
+      const near = grid.query(c.x, c.z, 1.6, tmp);
+      for (let i = 0; i < near.length; i++) {
+        const o = near[i];
+        if (o === c || o.dead || o.immune || o.infected > 0) continue;
+        const dx = o.x - c.x, dz = o.z - c.z;
+        if (dx * dx + dz * dz < 2.56 && rng() < 0.12) { o.infected = 10 + rng() * 5; sim.events.push({ type: 'infect', x: o.x, z: o.z, id: o.id }); }
+      }
+    }
+
+    function attack(c, h, maxE) {
+      const ratio = (c.genes.size * 1.15) / h.genes.size;
+      const pWin = Math.min(0.95, Math.max(0.1, TUNE.killBase * Math.pow(ratio, 1.5)));
+      if (rng() < pWin) {
+        killCreature(h, 'eaten');
+        c.energy = Math.min(maxE, c.energy + P.pGain * h.genes.size);
+        c.state = 'digest'; c.timer = TUNE.digest; c.target = null;
+        sim.events.push({ type: 'kill', x: h.x, z: h.z, id: c.id });
+      } else {
+        c.state = 'stun'; c.timer = 0.9; c.target = null; h.boostT = 1.5;
+        sim.events.push({ type: 'miss', x: h.x, z: h.z, id: c.id });
+      }
+    }
+
+    function finishEating(c, maxE) {
+      const p = c.target;
+      if (p && !p.dead && p.eater === c) {
+        c.energy = Math.min(maxE, c.energy + P.hGain * (0.3 + 0.7 * p.growth) * (p.type === 2 ? 1.2 : 1));
+        killPlant(p, 'eaten');
+        sim.events.push({ type: 'eat', x: p.x, z: p.z, id: c.id });
+      }
+      c.target = null;
+    }
+
+    // Densité locale : territoire pour les prédateurs, surpopulation pour les herbivores
+    function crowded(c) {
+      const rad = c.sp ? TUNE.territory : TUNE.herdRadius, max = c.sp ? TUNE.crowd : TUNE.herdCrowd;
+      const near = (c.sp ? gPred : gHerb).query(c.x, c.z, rad, tmp), r2 = rad * rad;
+      let n = 0;
+      for (let i = 0; i < near.length; i++) {
+        const o = near[i];
+        if (o === c || o.dead) continue;
+        const dx = o.x - c.x, dz = o.z - c.z;
+        if (dx * dx + dz * dz < r2 && ++n >= max) return true;
+      }
+      return false;
+    }
+
+    function reproduce(c) {
+      const S = SPECIES[c.sp];
+      const share = c.energy * TUNE.share;
+      c.energy = share; c.reproCD = S.reproCD; c.kids++;
+      const a = rng() * 6.283;
+      const ch = newCreature(c.sp, c.x + Math.cos(a) * 0.7, c.z + Math.sin(a) * 0.7, mutateGenes(c.genes), share, c.gen + 1);
+      clampDisc(ch, ctx.R - 0.6);
+      ch.parent = c.id;
+      ctx.alive++;
+      sim.totals.births[c.sp]++;
+      sim.events.push({ type: 'birth', sp: c.sp, x: ch.x, z: ch.z, id: ch.id, parent: c.id });
+    }
+
+    function updateCreature(c, dt) {
+      const S = SPECIES[c.sp], g = c.genes, R = ctx.R;
+      c.age += dt; c.reproCD -= dt; c.boostT -= dt;
+      const young = c.age < S.maturity ? 0.8 + 0.2 * c.age / S.maturity : 1;
+      const maxSpeed = P[S.speed] * g.speed * (c.boostT > 0 ? 1.25 : 1) * young;
+      const vision = P[S.vision] * g.vision;
+      const maxE = P[S.repro] * COST.maxE[c.sp];
+      let dx = 0, dz = 0, spd = 0;
+
+      if (c.state === 'eat' || c.state === 'digest' || c.state === 'stun' || c.state === 'rest') {
+        c.timer -= dt;
+        if (c.timer <= 0) {
+          if (c.state === 'eat') finishEating(c, maxE);
+          if (c.state === 'digest' || c.state === 'rest') c.chaseT = 0;
+          c.state = 'wander'; c.thinkT = 0;
+        }
+      } else {
+        c.thinkT -= dt;
+        if (c.thinkT <= 0) {
+          c.thinkT = 0.12 + rng() * 0.08;
+          if (c.sp === 0) thinkHerb(c, vision, maxE); else thinkPred(c, vision, maxE);
+        }
+        if (c.state === 'flee') { dx = c.fx; dz = c.fz; spd = maxSpeed; }
+        else if (c.state === 'seek') {
+          const p = c.target;
+          if (!p || p.dead || (p.eater && p.eater !== c)) { c.state = 'wander'; c.target = null; }
+          else {
+            dx = p.x - c.x; dz = p.z - c.z;
+            if (Math.hypot(dx, dz) < 0.3 + S.radius * g.size) { c.state = 'eat'; c.timer = TUNE.eatTime; p.eater = c; c.vx *= 0.3; c.vz *= 0.3; dx = dz = 0; }
+            else spd = Math.min(maxSpeed, P[S.speed] * TUNE.seekFrac);
+          }
+        } else if (c.state === 'hunt') {
+          const h = c.target;
+          if (!h || h.dead) { c.state = 'wander'; c.target = null; }
+          else {
+            dx = h.x - c.x; dz = h.z - c.z;
+            const d = Math.hypot(dx, dz);
+            // Traque lente et discrète, puis sprint quand la proie est proche
+            if (!c.sprint && d < TUNE.sprintRange) c.sprint = true;
+            c.chaseT += c.sprint ? dt : dt * 0.25;
+            if (d < S.radius * g.size + SPECIES[0].radius * h.genes.size + 0.15) { attack(c, h, maxE); dx = dz = 0; }
+            else if (c.chaseT > TUNE.giveUp) { c.state = 'rest'; c.timer = TUNE.rest; c.target = null; dx = dz = 0; }
+            else spd = c.sprint ? maxSpeed * TUNE.sprint : maxSpeed * TUNE.stalk;
+          }
+        }
+        if (c.state === 'wander') {
+          c.chaseT = Math.max(0, c.chaseT - dt * 0.5);
+          c.wa += (rng() - 0.5) * 7 * dt;
+          dx = Math.cos(c.wa); dz = Math.sin(c.wa); spd = Math.min(maxSpeed, P[S.speed] * TUNE.wander);
+        }
+      }
+
+      if (c.state !== 'hunt') c.sprint = false;
+      // Évite le bord du terrain
+      const r = Math.hypot(c.x, c.z), edge = R - 2.5;
+      if (r > edge && spd > 0) {
+        const w = (r - edge) / 2.5 * 2, l = Math.hypot(dx, dz) || 1;
+        dx = dx / l - (c.x / r) * w; dz = dz / l - (c.z / r) * w;
+        if (c.state === 'wander') c.wa = Math.atan2(dz, dx);
+      }
+      let tx = 0, tz = 0;
+      const l = Math.hypot(dx, dz);
+      if (l > 1e-6 && spd > 0) { tx = dx / l * spd; tz = dz / l * spd; }
+      const k = 1 - Math.exp(-6 * dt);
+      c.vx += (tx - c.vx) * k; c.vz += (tz - c.vz) * k;
+      c.x += c.vx * dt; c.z += c.vz * dt;
+      const r2 = Math.hypot(c.x, c.z), lim = R - 0.6;
+      if (r2 > lim) {
+        c.x *= lim / r2; c.z *= lim / r2;
+        const nx = c.x / lim, nz = c.z / lim, vn = c.vx * nx + c.vz * nz;
+        if (vn > 0) { c.vx -= vn * nx; c.vz -= vn * nz; }
+      }
+
+      // Énergie : métabolisme (taille), vision, et mouvement (vitesse²)
+      const v = Math.hypot(c.vx, c.vz), sz = g.size;
+      // Être grand, avoir de gros muscles (gène vitesse) et bien voir coûtent de l'énergie, même au repos
+      let cost = COST.basal[c.sp] * Math.pow(sz, 1.25) + COST.muscle * g.speed * g.speed + COST.vision * vision / COST.refVision + COST.move * sz * (v / COST.refSpeed) ** 2;
+      cost *= P[S.cost] * ctx.heat;
+      if (c.infected > 0) {
+        c.infected -= dt; cost += 1.1 / Math.sqrt(sz);
+        if (c.infected <= 0) { c.infected = 0; c.immune = true; }
+      }
+      c.energy -= cost * dt;
+      if (c.energy <= 0) { killCreature(c, c.infected > 0 ? 'sick' : 'starve'); return; }
+      if (c.age > P[S.life] * c.lifeF) { killCreature(c, 'old'); return; }
+      if (c.age > S.maturity && c.energy >= P[S.repro] && c.reproCD <= 0 && ctx.alive < P.maxCreatures && c.state !== 'flee') {
+        // Territoire : un prédateur entouré de trop de congénères attend avant de se reproduire
+        if (crowded(c)) c.reproCD = 2;
+        else reproduce(c);
+      }
+    }
+
+    function compact(arr) {
+      let j = 0;
+      for (let i = 0; i < arr.length; i++) { const e = arr[i]; if (e.dead && e.dyingT <= 0) continue; arr[j++] = e; }
+      arr.length = j;
+    }
+
+    sim.step = function (dt) {
+      sim.t += dt;
+      const R = P.worldSize; ctx.R = R;
+      const day = sim.daylight();
+      let growMul = P.plantGrowth * (0.35 + 0.65 * day), seedMul = P.plantGrowth * (0.5 + 0.5 * day);
+      let maxEff = P.plantMax, wilt = 0;
+      ctx.heat = 1;
+      const cat = sim.cat;
+      if (cat) {
+        cat.left -= dt;
+        if (cat.type === 'drought') { growMul *= 0.12; seedMul *= 0.05; wilt = 0.025; ctx.heat = 1.15; }
+        else if (cat.type === 'rain') { growMul *= 2.6; seedMul *= 3.2; maxEff *= 1.35; }
+        if (cat.left <= 0) { sim.events.push({ type: 'catEnd', cat: cat.type }); sim.cat = null; }
+      }
+
+      gPlants.reset(R); gHerb.reset(R); gPred.reset(R);
+      let nPlants = 0;
+      for (const p of sim.plants) if (!p.dead) { gPlants.add(p); nPlants++; }
+      let nAlive = [0, 0];
+      for (const c of sim.creatures[0]) if (!c.dead) { gHerb.add(c); nAlive[0]++; }
+      for (const c of sim.creatures[1]) if (!c.dead) { gPred.add(c); nAlive[1]++; }
+      ctx.alive = nAlive[0] + nAlive[1];
+
+      // --- Plantes
+      const plants = sim.plants, n0 = plants.length;
+      for (let i = 0; i < n0; i++) {
+        const p = plants[i];
+        if (p.dead) { p.dyingT -= dt; continue; }
+        p.age += dt;
+        if (p.growth < 1) p.growth = Math.min(1, p.growth + PLANT.grow * growMul * dt);
+        const life = PLANT.life * p.lifeF * (p.type === 2 ? 0.7 : 1);
+        if (p.age > life) { killPlant(p, 'old'); nPlants--; continue; }
+        if (wilt > 0 && p.eater == null && rng() < wilt * dt) { killPlant(p, 'dry'); nPlants--; continue; }
+      }
+      // Germination : flux de graines régulier (proportionnel à la surface), surtout près des plantes existantes
+      if (nPlants < maxEff) {
+        const rate = PLANT.rate * seedMul * (R / 26) ** 2 * (1 - nPlants / maxEff);
+        let k = rate * dt; const parents = tmpParents; parents.length = 0;
+        for (let i = 0; i < n0; i++) { const p = plants[i]; if (!p.dead && p.type !== 2 && p.growth > 0.55) parents.push(p); }
+        while (k > 0) {
+          if (rng() < k) {
+            let x, z, type = rng() < 0.4 ? 0 : 1;
+            if (parents.length && rng() < 0.85) {
+              const p = parents[(rng() * parents.length) | 0], a = rng() * 6.283, d = 1.3 + rng() * 3.5;
+              x = p.x + Math.cos(a) * d; z = p.z + Math.sin(a) * d; if (rng() < 0.85) type = p.type;
+            } else [x, z] = randInDisc(R - 1.2);
+            if (x * x + z * z < (R - 1.2) ** 2 && !gPlants.nearest(x, z, 0.95, q => !q.dead)) { newPlant(x, z, 0.04, type); nPlants++; }
+          }
+          k -= 1;
+        }
+      }
+
+      // --- Créatures
+      for (let sp = 0; sp < 2; sp++) {
+        const arr = sim.creatures[sp], n = arr.length;
+        for (let i = 0; i < n; i++) {
+          const c = arr[i];
+          if (c.dead) { c.dyingT -= dt; continue; }
+          updateCreature(c, dt);
+        }
+      }
+
+      // --- Réapparition en cas d'extinction (filet de sécurité, désactivable)
+      for (let sp = 0; sp < 2; sp++) {
+        let n = 0; for (const c of sim.creatures[sp]) if (!c.dead) n++;
+        if (n === 0 && P.respawn && P[SPECIES[sp].count] > 0) {
+          sim.extinctT[sp] += dt;
+          if (sim.extinctT[sp] > (sp ? 15 : 8)) {
+            sim.extinctT[sp] = 0;
+            const k = sp ? 2 : 8;
+            for (let i = 0; i < k; i++) {
+              let x, z;
+              if (sp) { const a = rng() * 6.283; x = Math.cos(a) * (R - 2); z = Math.sin(a) * (R - 2); } else [x, z] = randInDisc(R * 0.8);
+              newCreature(sp, x, z, baseGenes(), P[SPECIES[sp].repro] * 0.6, 0);
+              ctx.alive++;
+            }
+            sim.events.push({ type: 'immigrate', sp });
+          }
+        } else sim.extinctT[sp] = 0;
+      }
+
+      compact(sim.plants); compact(sim.creatures[0]); compact(sim.creatures[1]);
+    };
+
+    sim.counts = function () {
+      let pl = 0, h = 0, pr = 0;
+      for (const p of sim.plants) if (!p.dead) pl++;
+      for (const c of sim.creatures[0]) if (!c.dead) h++;
+      for (const c of sim.creatures[1]) if (!c.dead) pr++;
+      return { plants: pl, herb: h, pred: pr };
+    };
+
+    sim.sample = function () {
+      const o = { t: sim.t, plants: 0, herb: 0, pred: 0 };
+      for (const p of sim.plants) if (!p.dead) o.plants++;
+      const keys = [['herb', 'eH', 'hSpd', 'hVis', 'hSize'], ['pred', 'eP', 'pSpd', 'pVis', 'pSize']];
+      for (let sp = 0; sp < 2; sp++) {
+        let n = 0, e = 0, s = 0, v = 0, z = 0;
+        for (const c of sim.creatures[sp]) if (!c.dead) { n++; e += c.energy; s += c.genes.speed; v += c.genes.vision; z += c.genes.size; }
+        const K = keys[sp];
+        o[K[0]] = n;
+        o[K[1]] = n ? e / n : NaN; o[K[2]] = n ? s / n * 100 : NaN; o[K[3]] = n ? v / n * 100 : NaN; o[K[4]] = n ? z / n * 100 : NaN;
+      }
+      return o;
+    };
+
+    sim.addFood = function (x, z) {
+      const R = P.worldSize;
+      const o = { x, z }; clampDisc(o, R - 1.5);
+      for (let i = 0; i < 5; i++) {
+        const a = rng() * 6.283, d = i === 0 ? 0 : 0.7 + rng() * 1.1;
+        const q = { x: o.x + Math.cos(a) * d, z: o.z + Math.sin(a) * d }; clampDisc(q, R - 1);
+        newPlant(q.x, q.z, 0.75 + rng() * 0.25, 2);
+      }
+      sim.events.push({ type: 'food', x: o.x, z: o.z });
+    };
+
+    sim.addPredator = function (x, z) {
+      const o = { x, z }; clampDisc(o, P.worldSize - 1);
+      const c = newCreature(1, o.x, o.z, meanGenes(1), P.pRepro * 0.65, 0);
+      c.age = SPECIES[1].maturity;
+      ctx.alive++;
+      sim.events.push({ type: 'spawn', sp: 1, x: o.x, z: o.z, id: c.id });
+      return c;
+    };
+
+    sim.triggerCatastrophe = function (type) {
+      const dur = CAT_DURATION[type];
+      if (!dur) return;
+      sim.cat = { type, left: dur, dur };
+      const R = P.worldSize;
+      if (type === 'epidemic') {
+        for (let sp = 0; sp < 2; sp++) for (const c of sim.creatures[sp]) {
+          c.immune = false;
+          if (!c.dead && rng() < 0.3) { c.infected = 10 + rng() * 5; sim.events.push({ type: 'infect', x: c.x, z: c.z, id: c.id }); }
+        }
+      } else if (type === 'rain') {
+        const alive = sim.plants.filter(p => !p.dead && p.type !== 2);
+        for (let i = 0; i < 30; i++) {
+          let x, z;
+          if (alive.length && rng() < 0.7) { const p = alive[(rng() * alive.length) | 0], a = rng() * 6.283, d = 1.2 + rng() * 3; x = p.x + Math.cos(a) * d; z = p.z + Math.sin(a) * d; }
+          else [x, z] = randInDisc(R - 1.2);
+          if (x * x + z * z < (R - 1.2) ** 2) newPlant(x, z, 0.1, rng() < 0.4 ? 0 : 1);
+        }
+      } else if (type === 'drought') {
+        for (const p of sim.plants) if (!p.dead && p.eater == null && rng() < 0.2) killPlant(p, 'dry');
+      }
+      sim.events.push({ type: 'cat', cat: type });
+    };
+
+    // Taille du terrain modifiée : on ramène tout le monde à l'intérieur
+    sim.resize = function () {
+      const R = P.worldSize; ctx.R = R;
+      for (const p of sim.plants) if (Math.hypot(p.x, p.z) > R - 1) { p.dead = true; p.dyingT = 0; }
+      for (const arr of sim.creatures) for (const c of arr) clampDisc(c, R - 0.6);
+      compact(sim.plants);
+    };
+
+    sim.reset();
+    return sim;
+  }
+
+  return { DEFAULTS, PRESETS, SPECIES, GENE_KEYS, GENE_LIM, COST, PLANT, TUNE, heightAt, createSim };
+})();
+if (typeof window !== 'undefined') window.SimCore = SimCore;
+</script>
+<script type="module">
+/* ============================================================
+   RENDU 3D + INTERFACE
+   ============================================================ */
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+const { DEFAULTS, PRESETS, SPECIES, COST, PLANT, heightAt, createSim } = window.SimCore;
+const $ = id => document.getElementById(id);
+const fx = (v, d = 1) => (+v).toFixed(d).replace('.', ',');
+const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+const lerp = (a, b, t) => a + (b - a) * t;
+const randSeed = () => (Math.random() * 2147483647) | 0;
+const fmtTime = s => { s = Math.max(0, Math.floor(s)); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); };
+const easeOutBack = t => { const c = 1.9; t -= 1; return 1 + (c + 1) * t * t * t + c * t * t; };
+const easeInOut = t => t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+const hash = n => { const s = Math.sin(n * 12.9898) * 43758.5453; return s - Math.floor(s); };
+
+/* ---------- Stockage local (peut être indisponible : on protège tout) ---------- */
+const STORE = 'eco3d.v1.';
+const storeGet = k => { try { return JSON.parse(localStorage.getItem(STORE + k)); } catch (e) { return null; } };
+const storeSet = (k, v) => { try { localStorage.setItem(STORE + k, JSON.stringify(v)); return true; } catch (e) { return false; } };
+
+/* ---------- Simulation ---------- */
+const sim = createSim({}, randSeed());
+const P = sim.params;
+const ui = { quality: 'auto', presetName: 'Équilibré' };
+let paused = false;
+
+/* ---------- Moteur 3D ---------- */
+const canvas = $('c');
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
+const DPR = window.devicePixelRatio || 1;
+let pixelRatio = Math.min(DPR, 1.75);
+renderer.setPixelRatio(pixelRatio);
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(55, innerWidth / innerHeight, 0.3, 1400);
+const controls = new OrbitControls(camera, canvas);
+Object.assign(controls, { enableDamping: true, dampingFactor: 0.09, rotateSpeed: 0.75, zoomSpeed: 1, panSpeed: 0.9,
+  minDistance: 4, maxDistance: 170, maxPolarAngle: Math.PI * 0.6, screenSpacePanning: false });
+controls.touches = { ONE: THREE.TOUCH.ROTATE, TWO: THREE.TOUCH.DOLLY_PAN };
+
+const hemi = new THREE.HemisphereLight(0xeaf3ff, 0xbcd3a4, 1.6);
+const sun = new THREE.DirectionalLight(0xfff2df, 1.7);
+scene.add(hemi, sun, sun.target);
+
+// Ciel : dégradé doux dans un shader
+const skyU = { top: { value: new THREE.Color() }, mid: { value: new THREE.Color() }, bot: { value: new THREE.Color() }, uH: { value: 1 } };
+const sky = new THREE.Mesh(new THREE.SphereGeometry(600, 32, 20), new THREE.ShaderMaterial({
+  uniforms: skyU, side: THREE.BackSide, depthWrite: false, depthTest: false,
+  vertexShader: `varying vec3 vD;
+    void main() { vD = normalize(position); gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
+  // Dégradé vertical à l'écran (toujours visible, même quand la caméra regarde vers le bas)
+  fragmentShader: `uniform vec3 top; uniform vec3 mid; uniform vec3 bot; uniform float uH; varying vec3 vD;
+    void main() {
+      float v = clamp(gl_FragCoord.y / uH + vD.y * 0.35, 0.0, 1.0);
+      vec3 c = v > 0.45 ? mix(mid, top, smoothstep(0.45, 1.0, v)) : mix(bot, mid, smoothstep(0.0, 0.45, v));
+      gl_FragColor = vec4(c, 1.0);
+      #include <colorspace_fragment>
+    }`,
+}));
+sky.renderOrder = -10; sky.frustumCulled = false; scene.add(sky);
+
+const stars = (() => {
+  const g = new THREE.BufferGeometry(), a = [];
+  for (let i = 0; i < 380; i++) { const th = Math.random() * 6.283, y = 0.1 + Math.random() * 0.9, r = Math.sqrt(1 - y * y); a.push(Math.cos(th) * r * 560, y * 560, Math.sin(th) * r * 560); }
+  g.setAttribute('position', new THREE.Float32BufferAttribute(a, 3));
+  const s = new THREE.Points(g, new THREE.PointsMaterial({ color: 0xffffff, size: 2, sizeAttenuation: false, transparent: true, opacity: 0, depthWrite: false }));
+  s.frustumCulled = false; scene.add(s); return s;
+})();
+
+/* ---------- Petits outils de géométrie ---------- */
+function M(x, y, z, sx = 1, sy = sx, sz = sx, rx = 0, ry = 0, rz = 0) {
+  return new THREE.Matrix4().compose(new THREE.Vector3(x, y, z), new THREE.Quaternion().setFromEuler(new THREE.Euler(rx, ry, rz)), new THREE.Vector3(sx, sy, sz));
+}
+// Fusionne plusieurs formes colorées en une seule géométrie (= 1 seul appel de dessin)
+function merge(parts) {
+  const gs = parts.map(p => { const g = p.geo.index ? p.geo.toNonIndexed() : p.geo.clone(); if (p.m) g.applyMatrix4(p.m); return g; });
+  const total = gs.reduce((n, g) => n + g.attributes.position.count, 0);
+  const pos = new Float32Array(total * 3), nor = new Float32Array(total * 3), col = new Float32Array(total * 3);
+  let o = 0; const c = new THREE.Color();
+  gs.forEach((g, i) => {
+    const n = g.attributes.position.count;
+    pos.set(g.attributes.position.array, o * 3); nor.set(g.attributes.normal.array, o * 3);
+    c.set(parts[i].c);
+    for (let k = 0; k < n; k++) { col[(o + k) * 3] = c.r; col[(o + k) * 3 + 1] = c.g; col[(o + k) * 3 + 2] = c.b; }
+    o += n;
+  });
+  const out = new THREE.BufferGeometry();
+  out.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  out.setAttribute('normal', new THREE.BufferAttribute(nor, 3));
+  out.setAttribute('color', new THREE.BufferAttribute(col, 3));
+  return out;
+}
+const sph = (r, w = 14, h = 10) => new THREE.SphereGeometry(r, w, h);
+const ico = (r, d = 1) => new THREE.IcosahedronGeometry(r, d);
+
+/* ---------- Terrain flottant ---------- */
+const topMat = new THREE.MeshLambertMaterial({ vertexColors: true });
+const underMat = new THREE.MeshLambertMaterial({ vertexColors: true });
+let terrainTop = null, terrainUnder = null, terrainR = 0;
+
+function ringIndex(rings, seg) {
+  const idx = [];
+  for (let i = 0; i < rings; i++) for (let j = 0; j < seg; j++) {
+    const a = i * seg + j, b = i * seg + (j + 1) % seg, c = (i + 1) * seg + j, d = (i + 1) * seg + (j + 1) % seg;
+    idx.push(a, b, c, b, d, c);
+  }
+  return idx;
+}
+function buildTerrain() {
+  const R = P.worldSize; terrainR = R;
+  const SEG = 120, RINGS = Math.round(R * 1.8), BEV = 7, UNDER = 18, bev = 1.3, depth = R * 0.45;
+  const pos = [], col = [], c = new THREE.Color();
+  const low = new THREE.Color('#a6d792'), high = new THREE.Color('#c2e6a8'), lip = new THREE.Color('#d5ecbf');
+  for (let i = 0; i <= RINGS + BEV; i++) for (let j = 0; j < SEG; j++) {
+    const a = j / SEG * Math.PI * 2;
+    let r, y;
+    if (i <= RINGS) { r = R * i / RINGS; } else { const ph = (i - RINGS) / BEV * Math.PI / 2; r = R + bev * Math.sin(ph); y = -bev * (1 - Math.cos(ph)); }
+    const x = Math.cos(a) * r, z = Math.sin(a) * r;
+    if (i <= RINGS) y = heightAt(x, z, R);
+    pos.push(x, y, z);
+    c.copy(low).lerp(high, clamp((y + 0.6) / 2.4, 0, 1));
+    c.offsetHSL(0, 0, (Math.sin(x * 0.9 + z * 0.5) * Math.sin(z * 0.7 - x * 0.3)) * 0.018 + (hash(i * 131 + j) - 0.5) * 0.008);
+    if (i > RINGS) c.lerp(lip, (i - RINGS) / BEV * 0.8);
+    col.push(c.r, c.g, c.b);
+  }
+  const g1 = new THREE.BufferGeometry();
+  g1.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  g1.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
+  g1.setIndex(ringIndex(RINGS + BEV, SEG)); g1.computeVertexNormals();
+
+  const pos2 = [], col2 = [];
+  const soil = ['#e3d3b4', '#d6bf9b', '#c4a582', '#a98b6e', '#8f7560'].map(h => new THREE.Color(h));
+  for (let m = 0; m <= UNDER; m++) {
+    const t = m / UNDER;
+    for (let j = 0; j < SEG; j++) {
+      const a = j / SEG * Math.PI * 2;
+      const wob = m === 0 ? 1 : 1 + 0.05 * Math.sin(a * 5 + t * 4) + 0.035 * Math.sin(a * 11 - t * 7 + 1.3);
+      const rr = (R + bev) * Math.pow(Math.cos(t * Math.PI / 2), 0.7) * wob;
+      const y = -bev - depth * Math.pow(Math.sin(t * Math.PI / 2), 1.35) - (m === 0 ? 0 : 0.7 * Math.sin(a * 7 + t * 9) * t);
+      pos2.push(Math.cos(a) * rr, y, Math.sin(a) * rr);
+      const L = clamp(t * (soil.length - 1) + 0.25 * Math.sin(y * 1.1 + a * 3), 0, soil.length - 1.001);
+      c.copy(soil[Math.floor(L)]).lerp(soil[Math.floor(L) + 1], L % 1);
+      if (m === 0) c.lerp(lip, 0.5);
+      col2.push(c.r, c.g, c.b);
+    }
+  }
+  const g2 = new THREE.BufferGeometry();
+  g2.setAttribute('position', new THREE.Float32BufferAttribute(pos2, 3));
+  g2.setAttribute('color', new THREE.Float32BufferAttribute(col2, 3));
+  g2.setIndex(ringIndex(UNDER, SEG)); g2.computeVertexNormals();
+
+  if (terrainTop) { terrainTop.geometry.dispose(); terrainUnder.geometry.dispose(); terrainTop.geometry = g1; terrainUnder.geometry = g2; }
+  else { terrainTop = new THREE.Mesh(g1, topMat); terrainUnder = new THREE.Mesh(g2, underMat); scene.add(terrainTop, terrainUnder); }
+  for (const p of sim.plants) p._y = undefined;
+  cloudLayout();
+}
+let terrainTimer = 0;
+const scheduleTerrain = () => { clearTimeout(terrainTimer); terrainTimer = setTimeout(buildTerrain, 120); };
+
+/* ---------- Plantes, animaux, ombres : un « InstancedMesh » par forme ---------- */
+const plantMat = new THREE.MeshLambertMaterial({ vertexColors: true });
+const animalMat = new THREE.MeshLambertMaterial({ vertexColors: true, emissive: 0x1c1c1c });
+const treeGeo = merge([
+  { geo: new THREE.CylinderGeometry(0.08, 0.13, 0.75, 7), c: '#b48c6a', m: M(0, 0.37, 0) },
+  { geo: ico(0.5), c: '#6dbb63', m: M(0, 1.0, 0, 1, 0.92, 1) },
+  { geo: ico(0.34), c: '#82c96f', m: M(0.24, 1.32, -0.08) },
+  { geo: ico(0.3), c: '#76c268', m: M(-0.22, 1.24, 0.14) },
+]);
+const bushGeo = merge([
+  { geo: ico(0.36), c: '#84cd6c', m: M(0, 0.28, 0, 1, 0.85, 1) },
+  { geo: ico(0.27), c: '#79c463', m: M(0.29, 0.21, 0.08) },
+  { geo: ico(0.25), c: '#8fd477', m: M(-0.24, 0.2, -0.12) },
+]);
+const berryParts = [
+  { geo: ico(0.34), c: '#5fb866', m: M(0, 0.27, 0, 1, 0.85, 1) },
+  { geo: ico(0.24), c: '#6cc070', m: M(0.25, 0.2, 0.1) },
+];
+for (let i = 0; i < 7; i++) { const a = i / 7 * 6.283, y = 0.22 + (i % 3) * 0.1; berryParts.push({ geo: ico(0.075, 0), c: i % 2 ? '#ff5a7a' : '#ff8a5c', m: M(Math.cos(a) * 0.33, y, Math.sin(a) * 0.33) }); }
+const berryGeo = merge(berryParts);
+
+// Herbivore : boule douce, oreilles rondes, petit nez (avant = +Z)
+const herbGeo = merge([
+  { geo: sph(0.5, 16, 12), c: '#ffffff', m: M(0, 0.47, 0, 1, 0.92, 1.06) },
+  { geo: sph(0.13, 8, 6), c: '#ffffff', m: M(-0.2, 0.87, -0.04, 0.8, 1.5, 0.55, 0, 0, 0.3) },
+  { geo: sph(0.13, 8, 6), c: '#ffffff', m: M(0.2, 0.87, -0.04, 0.8, 1.5, 0.55, 0, 0, -0.3) },
+  { geo: sph(0.068, 6, 4), c: '#262833', m: M(-0.18, 0.59, 0.45) },
+  { geo: sph(0.068, 6, 4), c: '#262833', m: M(0.18, 0.59, 0.45) },
+  { geo: sph(0.055, 6, 4), c: '#f2a0b2', m: M(0, 0.48, 0.53) },
+  { geo: sph(0.12, 6, 5), c: '#ffffff', m: M(0, 0.44, -0.53) },
+]);
+// Prédateur : allongé et pointu (museau, oreilles, queue)
+const predGeo = merge([
+  { geo: sph(0.5, 14, 10), c: '#ffffff', m: M(0, 0.5, -0.05, 0.62, 0.6, 1.25) },
+  { geo: new THREE.ConeGeometry(0.26, 0.75, 14), c: '#ffffff', m: M(0, 0.58, 0.78, 1, 1, 1, Math.PI / 2, 0, 0) },
+  { geo: new THREE.ConeGeometry(0.1, 0.34, 8), c: '#ffffff', m: M(-0.16, 0.92, 0.42, 1, 1, 1, -0.2, 0, 0.28) },
+  { geo: new THREE.ConeGeometry(0.1, 0.34, 8), c: '#ffffff', m: M(0.16, 0.92, 0.42, 1, 1, 1, -0.2, 0, -0.28) },
+  { geo: new THREE.ConeGeometry(0.11, 0.85, 8), c: '#ffffff', m: M(0, 0.66, -0.95, 1, 1, 1, -Math.PI / 2 - 0.45, 0, 0) },
+  { geo: new THREE.CylinderGeometry(0.06, 0.045, 0.3, 6), c: '#ffffff', m: M(-0.15, 0.15, 0.3) },
+  { geo: new THREE.CylinderGeometry(0.06, 0.045, 0.3, 6), c: '#ffffff', m: M(0.15, 0.15, 0.3) },
+  { geo: new THREE.CylinderGeometry(0.06, 0.045, 0.3, 6), c: '#ffffff', m: M(-0.15, 0.15, -0.38) },
+  { geo: new THREE.CylinderGeometry(0.06, 0.045, 0.3, 6), c: '#ffffff', m: M(0.15, 0.15, -0.38) },
+  { geo: sph(0.058, 6, 4), c: '#2a1c18', m: M(-0.15, 0.7, 0.62) },
+  { geo: sph(0.058, 6, 4), c: '#2a1c18', m: M(0.15, 0.7, 0.62) },
+  { geo: sph(0.05, 6, 4), c: '#3a2622', m: M(0, 0.58, 1.15) },
+]);
+
+const shadowTex = (() => {
+  const cv = document.createElement('canvas'); cv.width = cv.height = 64;
+  const g = cv.getContext('2d'), gr = g.createRadialGradient(32, 32, 0, 32, 32, 32);
+  gr.addColorStop(0, 'rgba(255,255,255,1)'); gr.addColorStop(0.45, 'rgba(255,255,255,.55)'); gr.addColorStop(1, 'rgba(255,255,255,0)');
+  g.fillStyle = gr; g.fillRect(0, 0, 64, 64);
+  return new THREE.CanvasTexture(cv);
+})();
+const shadowMat = new THREE.MeshBasicMaterial({ map: shadowTex, color: 0x2e4a2a, transparent: true, opacity: 0.32, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 });
+const shadowGeo = new THREE.PlaneGeometry(1, 1).rotateX(-Math.PI / 2);
+
+const MAXP = 900, MAXC = 440;
+function inst(geo, mat, max) {
+  const m = new THREE.InstancedMesh(geo, mat, max);
+  m.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+  m.setColorAt(0, new THREE.Color(1, 1, 1)); m.instanceColor.setUsage(THREE.DynamicDrawUsage);
+  m.count = 0; m.frustumCulled = false; scene.add(m);
+  return m;
+}
+const plantMeshes = [inst(treeGeo, plantMat, MAXP), inst(bushGeo, plantMat, MAXP), inst(berryGeo, plantMat, 300)];
+const animalMeshes = [inst(herbGeo, animalMat, MAXC), inst(predGeo, animalMat, MAXC)];
+const shadowMesh = inst(shadowGeo, shadowMat, MAXC + MAXP);
+shadowMesh.renderOrder = 1;
+const PLANT_SCALE = [1.35, 1.2, 1.05], ANIMAL_SCALE = [1.35, 1.25];
+
+// Sélection : anneau sous l'animal + cercle de vision
+const ringGeo = new THREE.RingGeometry(0.82, 1, 48).rotateX(-Math.PI / 2);
+const selRing = new THREE.Mesh(ringGeo, new THREE.MeshBasicMaterial({ color: 0x007aff, transparent: true, opacity: 0.9, depthWrite: false }));
+const visRing = new THREE.Mesh(new THREE.RingGeometry(0.975, 1, 96).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ color: 0x007aff, transparent: true, opacity: 0.35, depthWrite: false, depthTest: false }));
+selRing.visible = visRing.visible = false; visRing.renderOrder = 5;
+scene.add(selRing, visRing);
+
+/* ---------- Effets : particules, ondes, pluie, nuages ---------- */
+const PART_MAX = 380;
+const partMesh = inst(ico(1, 0), new THREE.MeshBasicMaterial(), PART_MAX);
+const parts = [];
+const PC = Object.fromEntries(Object.entries({
+  love: ['#ff8fb1', '#ffc2d4', '#ffffff'], blood: ['#ff8a70', '#ffb199', '#ffd6c9'], soul: ['#ffffff', '#fff6d6', '#e7f0ff'],
+  dust: ['#d9d4c7', '#c9c3b5', '#efece5'], leaf: ['#7ed36b', '#a7e28f', '#5fbf58'], dry: ['#d9b46a', '#c79a52', '#e6cf8f'],
+  oldLeaf: ['#c7d27a', '#a9c86a'], sick: ['#b28cf0', '#cdb4ff'], spark: ['#ffffff', '#c8f2b8', '#9be08a'], red: ['#ff9a7a', '#ffffff'],
+}).map(([k, v]) => [k, v.map(h => new THREE.Color(h))]));
+function burst(x, y, z, n, pal, o = {}) {
+  if (ui.lowfx) n = Math.ceil(n / 2);
+  for (let i = 0; i < n && parts.length < PART_MAX; i++) {
+    const a = Math.random() * 6.283, sp = (o.speed ?? 2) * (0.4 + Math.random() * 0.8), life = (o.life ?? 0.8) * (0.7 + Math.random() * 0.6);
+    parts.push({ x, y, z, vx: Math.cos(a) * sp, vy: (o.up ?? 2.5) * (0.6 + Math.random() * 0.6), vz: Math.sin(a) * sp,
+      life, max: life, size: (o.size ?? 0.1) * (0.7 + Math.random() * 0.6), g: o.g ?? 6, col: pal[i % pal.length], rot: Math.random() * 6 });
+  }
+}
+const _d = new THREE.Object3D(); _d.rotation.order = 'YXZ';
+function updateParticles(dt) {
+  let n = 0;
+  for (let i = parts.length - 1; i >= 0; i--) {
+    const p = parts[i];
+    p.life -= dt;
+    if (p.life <= 0) { parts[i] = parts[parts.length - 1]; parts.pop(); continue; }
+    p.vy -= p.g * dt; const drag = Math.exp(-dt * 1.5);
+    p.vx *= drag; p.vz *= drag; p.x += p.vx * dt; p.y += p.vy * dt; p.z += p.vz * dt; p.rot += dt * 3;
+  }
+  for (const p of parts) {
+    _d.position.set(p.x, p.y, p.z); _d.rotation.set(p.rot, p.rot * 1.3, 0);
+    _d.scale.setScalar(p.size * Math.min(1, (p.life / p.max) * 2.5)); _d.updateMatrix();
+    partMesh.setMatrixAt(n, _d.matrix); partMesh.setColorAt(n, p.col); n++;
+  }
+  partMesh.count = n; partMesh.instanceMatrix.needsUpdate = true; partMesh.instanceColor.needsUpdate = true;
+}
+const ripples = Array.from({ length: 6 }, () => {
+  const m = new THREE.Mesh(ringGeo, new THREE.MeshBasicMaterial({ transparent: true, depthWrite: false, side: THREE.DoubleSide }));
+  m.visible = false; scene.add(m); return { m, t: 1, dur: 1, size: 3 };
+});
+function ripple(x, z, color, size = 3) {
+  const r = ripples.find(q => q.t >= q.dur) || ripples[0];
+  r.m.material.color.set(color); r.t = 0; r.dur = 0.9; r.size = size;
+  r.m.position.set(x, heightAt(x, z, P.worldSize) + 0.08, z); r.m.visible = true;
+}
+function updateRipples(dt) {
+  for (const r of ripples) {
+    if (!r.m.visible) continue;
+    r.t += dt; const k = r.t / r.dur;
+    if (k >= 1) { r.m.visible = false; continue; }
+    r.m.scale.setScalar(0.3 + easeInOut(k) * r.size); r.m.material.opacity = (1 - k) * 0.85;
+  }
+}
+const RAIN_N = 320;
+const rainMesh = new THREE.InstancedMesh(new THREE.BoxGeometry(0.06, 1.1, 0.06), new THREE.MeshBasicMaterial({ color: 0x9cc2ec, transparent: true, opacity: 0.7, depthWrite: false }), RAIN_N);
+rainMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage); rainMesh.count = 0; rainMesh.frustumCulled = false; scene.add(rainMesh);
+const drops = Array.from({ length: RAIN_N }, () => ({ x: 0, y: -99, z: 0, v: 24, floor: 0 }));
+const fxAmt = { rain: 0, drought: 0, sick: 0 };
+function updateRain(dt) {
+  const n = Math.round(RAIN_N * fxAmt.rain * (ui.lowfx ? 0.5 : 1)), R = P.worldSize;
+  // Les gouttes tombent autour de l'endroit regardé : la pluie reste dense même en gros plan
+  const spread = Math.min(R + 3, camera.position.distanceTo(controls.target) * 0.55 + 5), tx = controls.target.x, tz = controls.target.z;
+  for (let i = 0; i < n; i++) {
+    const d = drops[i];
+    if (d.y < d.floor) { const a = Math.random() * 6.283, r = Math.sqrt(Math.random()) * spread; d.x = tx + Math.cos(a) * r; d.z = tz + Math.sin(a) * r; d.floor = Math.hypot(d.x, d.z) < R ? heightAt(d.x, d.z, R) : -12; d.y = d.floor + 8 + Math.random() * 14; d.v = 20 + Math.random() * 8; }
+    d.y -= d.v * dt;
+    _d.position.set(d.x, d.y, d.z); _d.rotation.set(0, 0, 0); _d.scale.setScalar(1); _d.updateMatrix(); rainMesh.setMatrixAt(i, _d.matrix);
+  }
+  rainMesh.count = n; rainMesh.instanceMatrix.needsUpdate = true;
+}
+const cloudGeo = merge([
+  { geo: ico(1.6, 2), c: '#ffffff', m: M(0, 0, 0) }, { geo: ico(1.25, 2), c: '#ffffff', m: M(1.6, -0.3, 0.3) },
+  { geo: ico(1.15, 2), c: '#ffffff', m: M(-1.5, -0.35, -0.2) }, { geo: ico(1.0, 2), c: '#ffffff', m: M(0.5, 0.75, -0.4) },
+  { geo: ico(0.9, 2), c: '#ffffff', m: M(-0.6, 0.55, 0.6) },
+]);
+const cloudMat = new THREE.MeshLambertMaterial({ vertexColors: true, emissive: 0x8a96a3, transparent: true, opacity: 0.93 });
+const clouds = new THREE.InstancedMesh(cloudGeo, cloudMat, 6); clouds.frustumCulled = false; scene.add(clouds);
+const cloudData = Array.from({ length: 6 }, (_, i) => ({ a: i / 6 * 6.283 + Math.random(), r: 0, y: 0, s: 0.8 + Math.random() * 0.7, w: (0.012 + Math.random() * 0.012) * (i % 2 ? 1 : -1) }));
+// Les nuages flottent un peu sous le niveau de l'île : on la voit « posée » au-dessus
+function cloudLayout() { const R = P.worldSize; cloudData.forEach((c, i) => { c.r = R + 5 + (i % 3) * 6 + Math.random() * 4; c.y = -3 - (i % 3) * 3 - Math.random() * 3; }); }
+function updateClouds(dt) {
+  cloudData.forEach((c, i) => {
+    c.a += c.w * dt;
+    _d.position.set(Math.cos(c.a) * c.r, c.y, Math.sin(c.a) * c.r); _d.rotation.set(0, -c.a, 0); _d.scale.set(c.s * 1.3, c.s, c.s); _d.updateMatrix();
+    clouds.setMatrixAt(i, _d.matrix);
+  });
+  clouds.instanceMatrix.needsUpdate = true;
+}
+
+/* ---------- Couleurs selon les gènes (la sélection naturelle se voit aussi à l'œil) ---------- */
+const SICK = new THREE.Color('#b9a0ea'), GREY = new THREE.Color('#9a9a9a'), OLDLEAF = new THREE.Color(1.25, 1.0, 0.5), DRY = new THREE.Color(1.3, 1.0, 0.45);
+function geneColor(c) {
+  const g = c.genes, col = new THREE.Color();
+  if (c.sp === 0) col.setHSL(clamp(0.6 - (g.speed - 1) * 0.22, 0.42, 0.75), 0.62, clamp(0.84 - (g.size - 1) * 0.06, 0.74, 0.9));
+  else col.setHSL(clamp(0.045 - (g.speed - 1) * 0.06 + (g.vision - 1) * 0.04, -0.04, 0.11), 0.9, clamp(0.56 - (g.size - 1) * 0.08, 0.42, 0.64));
+  return col;
+}
+
+/* ---------- Mise à jour des instances à chaque image ---------- */
+const _v = new THREE.Vector3(), _v2 = new THREE.Vector3(), _n = new THREE.Vector3(), _q = new THREE.Quaternion(), _q2 = new THREE.Quaternion(), _m = new THREE.Matrix4(), _s = new THREE.Vector3(), _c = new THREE.Color();
+const UP = new THREE.Vector3(0, 1, 0);
+let nShadow = 0;
+function groundQuat(x, z, R, heading, out) {
+  const e = 0.35;
+  const hx = (heightAt(x + e, z, R) - heightAt(x - e, z, R)) / (2 * e), hz = (heightAt(x, z + e, R) - heightAt(x, z - e, R)) / (2 * e);
+  _n.set(-hx, 1, -hz).normalize();
+  out.setFromUnitVectors(UP, _n);
+  if (heading) out.multiply(_q2.setFromAxisAngle(UP, heading));
+  return out;
+}
+function addShadow(x, y, z, sx, sz, heading, q) {
+  if (nShadow >= MAXC + MAXP) return;
+  if (q) _q.copy(q); else groundQuat(x, z, P.worldSize, heading, _q);
+  _m.compose(_v.set(x, y + 0.05, z), _q, _s.set(sx, 1, sz));
+  shadowMesh.setMatrixAt(nShadow++, _m);
+}
+
+function updatePlants(time) {
+  const R = P.worldSize, cnt = [0, 0, 0];
+  for (const p of sim.plants) {
+    const mesh = plantMeshes[p.type], i = cnt[p.type];
+    if (i >= mesh.instanceMatrix.count) continue;
+    if (p._y === undefined) { p._y = heightAt(p.x, p.z, R) - 0.04; p._v = 0.9 + hash(p.id) * 0.16; p._sq = p.type === 0 ? groundQuat(p.x, p.z, R, 0, new THREE.Quaternion()) : null; }
+    let s = PLANT_SCALE[p.type] * (0.22 + 0.78 * Math.pow(p.growth, 0.8));
+    const pa = (sim.t - p.born) / 0.5; if (pa < 1) s *= easeOutBack(clamp(pa, 0, 1));
+    if (p.dead) s *= clamp(p.dyingT / 0.6, 0, 1);
+    const sway = Math.sin(time * 1.4 + p.id) * (p.type === 0 ? 0.035 : 0.02);
+    _d.position.set(p.x, p._y, p.z); _d.rotation.set(sway, p.rot, sway * 0.6); _d.scale.setScalar(Math.max(s, 0.001)); _d.updateMatrix();
+    mesh.setMatrixAt(i, _d.matrix);
+    _c.setRGB(p._v, p._v * 1.02, p._v * 0.96);
+    const life = PLANT.life * p.lifeF * (p.type === 2 ? 0.7 : 1), oldK = clamp((p.age / life - 0.7) / 0.3, 0, 1);
+    if (oldK > 0) _c.lerp(OLDLEAF, oldK * 0.6);
+    if (p.dead && p.cause === 'dry') _c.lerp(DRY, 0.7);
+    mesh.setColorAt(i, _c);
+    cnt[p.type]++;
+    if (p.type === 0 && s > 0.3) addShadow(p.x, p._y, p.z, s * 1.4, s * 1.4, 0, p._sq);
+  }
+  plantMeshes.forEach((m, k) => { m.count = cnt[k]; m.instanceMatrix.needsUpdate = true; m.instanceColor.needsUpdate = true; });
+}
+
+function updateAnimals(dtR, simDt, time) {
+  const R = P.worldSize;
+  for (let sp = 0; sp < 2; sp++) {
+    const mesh = animalMeshes[sp], S = SPECIES[sp]; let n = 0;
+    for (const c of sim.creatures[sp]) {
+      if (n >= MAXC) break;
+      if (c._ph === undefined) { c._ph = Math.random() * 6; c._hd = Math.random() * 6.283; c._pulse = 0; c._col = geneColor(c); }
+      const spd = Math.hypot(c.vx, c.vz);
+      c._ph += spd * simDt * (sp ? 2.4 : 3.0);
+      if (spd > 0.12) { let d = Math.atan2(c.vx, c.vz) - c._hd; d = Math.atan2(Math.sin(d), Math.cos(d)); c._hd += d * Math.min(1, dtR * 9); }
+      const grow = c.age < S.maturity ? 0.55 + 0.45 * (c.age / S.maturity) : 1;
+      let s = c.genes.size * grow * ANIMAL_SCALE[sp];
+      const ba = (sim.t - c.born) / 0.45; if (ba < 1) s *= easeOutBack(clamp(ba, 0, 1));
+      const yG = heightAt(c.x, c.z, R);
+      let y = yG, sx = 1, sy = 1, rx = 0, rz = 0, ry = c._hd, lift = 0;
+      const moving = clamp(spd / 1.2, 0, 1);
+      if (sp === 0) {
+        const hop = Math.abs(Math.sin(c._ph)); lift = hop * 0.32 * moving * s;
+        const squash = (1 - hop) * moving;
+        sy = 1 - squash * 0.14 + hop * moving * 0.08; sx = 1 + squash * 0.08; rx = moving * 0.1;
+        if (c.state === 'eat') { rx = 0.3 + Math.sin(time * 16) * 0.12; }
+      } else {
+        rz = Math.sin(c._ph) * 0.13 * (0.25 + 0.75 * moving);
+        ry += Math.sin(c._ph * 0.5) * 0.14 * moving;
+        lift = Math.abs(Math.sin(c._ph)) * 0.07 * moving * s;
+        if (c.sprint) rx = 0.12;
+        if (c.state === 'digest' || c.state === 'rest') { sy = 0.86 + Math.sin(time * 3 + c.id) * 0.03; sx = 1.06; }
+        if (c.state === 'stun') rz += Math.sin(time * 30) * 0.08;
+      }
+      if (c._pulse > 0) { c._pulse = Math.max(0, c._pulse - dtR * 2.2); const k = Math.sin(c._pulse * Math.PI) * 0.22; sx += k; sy -= k * 0.5; }
+      let dk = 1;
+      if (c.dead) { dk = clamp(c.dyingT / 0.7, 0, 1); s *= 0.25 + 0.75 * dk; rz += (1 - dk) * 1.4; lift = 0; }
+      y += lift;
+      _d.position.set(c.x, y, c.z); _d.rotation.set(rx, ry, rz); _d.scale.set(s * sx, s * sy, s * sx); _d.updateMatrix();
+      mesh.setMatrixAt(n, _d.matrix);
+      _c.copy(c._col);
+      if (c.infected > 0) _c.lerp(SICK, 0.6);
+      if (c.dead) _c.lerp(GREY, (1 - dk) * 0.8);
+      mesh.setColorAt(n, _c);
+      n++;
+      const sh = s * (1 - clamp(lift / Math.max(s, 0.1), 0, 0.5) * 0.6);
+      if (sp === 0) addShadow(c.x, yG, c.z, sh * 1.15, sh * 1.15, 0);
+      else addShadow(c.x, yG, c.z, sh * 0.85, sh * 1.9, c._hd);
+    }
+    mesh.count = n; mesh.instanceMatrix.needsUpdate = true; mesh.instanceColor.needsUpdate = true;
+  }
+}
+
+/* ---------- Ciel, lumière, jour / nuit, ambiance des catastrophes ---------- */
+const SKY = {
+  day: ['#b4d7f3', '#e4edf1', '#f5f3ed'], dusk: ['#a9b9e0', '#f3d6c8', '#f2e6dc'],
+  night: ['#2a3a66', '#4a5d92', '#6274a3'], rain: ['#aeb9c6', '#cfd7de', '#dfe3e3'], dry: ['#c4d4e4', '#efe6d4', '#f3ecdf'],
+};
+for (const k in SKY) SKY[k] = SKY[k].map(h => new THREE.Color(h));
+const HEMI_DAY = new THREE.Color(0xeaf3ff), HEMI_NIGHT = new THREE.Color(0x8796cc), GROUND_DAY = new THREE.Color(0xbcd3a4), GROUND_NIGHT = new THREE.Color(0x56675f);
+const SUN_DAY = new THREE.Color(0xfff2df), SUN_DUSK = new THREE.Color(0xffc49a), MOON = new THREE.Color(0xb4c2ff);
+const WHITE = new THREE.Color(1, 1, 1), TOP_DRY = new THREE.Color(1.2, 1.02, 0.62), TOP_WET = new THREE.Color(0.9, 1.03, 0.95);
+let daylight = 1;
+function updateAmbience(dt) {
+  const target = sim.daylight();
+  daylight += (target - daylight) * Math.min(1, dt * 3);
+  const dl = daylight, dusk = P.dayNight ? clamp(1 - Math.abs(dl - 0.55) * 2.6, 0, 1) : 0;
+  const cat = sim.cat ? sim.cat.type : null, k = Math.min(1, dt * 1.2);
+  fxAmt.rain += ((cat === 'rain' ? 1 : 0) - fxAmt.rain) * k;
+  fxAmt.drought += ((cat === 'drought' ? 1 : 0) - fxAmt.drought) * k;
+  for (let i = 0; i < 3; i++) {
+    _c.copy(SKY.night[i]).lerp(SKY.day[i], dl).lerp(SKY.dusk[i], dusk * 0.65).lerp(SKY.rain[i], fxAmt.rain * 0.7).lerp(SKY.dry[i], fxAmt.drought * 0.5);
+    skyU[['top', 'mid', 'bot'][i]].value.copy(_c);
+  }
+  const phase = sim.dayPhase() * 6.283;
+  sun.position.set(Math.cos(phase) * 80, Math.max(Math.sin(phase), 0.18) * 90 + 8, 35);
+  sun.intensity = (0.4 + 1.3 * dl) * (1 - fxAmt.rain * 0.45);
+  sun.color.copy(MOON).lerp(SUN_DAY, dl).lerp(SUN_DUSK, dusk);
+  hemi.intensity = 1.35 + 0.35 * dl;
+  hemi.color.copy(HEMI_NIGHT).lerp(HEMI_DAY, dl); hemi.groundColor.copy(GROUND_NIGHT).lerp(GROUND_DAY, dl);
+  stars.material.opacity = clamp((0.4 - dl) * 2.5, 0, 0.9) * (1 - fxAmt.rain);
+  cloudMat.emissive.setRGB(0.25 + 0.3 * dl, 0.28 + 0.31 * dl, 0.32 + 0.32 * dl);
+  topMat.color.copy(WHITE).lerp(TOP_DRY, fxAmt.drought).lerp(TOP_WET, fxAmt.rain);
+  plantMat.color.copy(WHITE).lerp(DRY, fxAmt.drought * 0.75);
+  renderer.setClearColor(skyU.mid.value, 1);
+}
+
+/* ---------- Caméra : vue d'accueil, animation, suivi ---------- */
+let selected = null, follow = true, camAnim = null, selZoomT = 0;
+function homeView() {
+  const R = P.worldSize, aspect = innerWidth / innerHeight;
+  const vf = THREE.MathUtils.degToRad(camera.fov), hf = 2 * Math.atan(Math.tan(vf / 2) * aspect);
+  const dist = R * (aspect < 1 ? 1.0 : 0.9) / Math.tan(Math.min(vf, hf) / 2);
+  const el = THREE.MathUtils.degToRad(aspect < 1 ? 60 : 46), az = THREE.MathUtils.degToRad(28);
+  const target = new THREE.Vector3(0, -R * (aspect < 1 ? 0.3 : 0.12), 0);
+  return { target, pos: target.clone().add(new THREE.Vector3(Math.sin(az) * Math.cos(el), Math.sin(el), Math.cos(az) * Math.cos(el)).multiplyScalar(dist)) };
+}
+function goHome(animate = true) {
+  const h = homeView();
+  if (!animate) { camera.position.copy(h.pos); controls.target.copy(h.target); controls.update(); return; }
+  camAnim = { t: 0, dur: 0.9, p0: camera.position.clone(), t0: controls.target.clone(), p1: h.pos, t1: h.target };
+}
+function updateCamera(dtR) {
+  const R = P.worldSize;
+  if (camAnim) {
+    camAnim.t += dtR; const k = easeInOut(Math.min(1, camAnim.t / camAnim.dur));
+    camera.position.lerpVectors(camAnim.p0, camAnim.p1, k); controls.target.lerpVectors(camAnim.t0, camAnim.t1, k);
+    if (k >= 1) camAnim = null;
+  } else if (selected && follow && !selected.dead) {
+    _v.set(selected.x, heightAt(selected.x, selected.z, R) + 0.4, selected.z);
+    _v2.subVectors(_v, controls.target).multiplyScalar(1 - Math.exp(-dtR * 5));
+    controls.target.add(_v2); camera.position.add(_v2);
+    if (selZoomT > 0) {
+      selZoomT -= dtR;
+      const dist = camera.position.distanceTo(controls.target);
+      if (dist > 15) { _v2.subVectors(camera.position, controls.target).setLength(lerp(dist, 15, 1 - Math.exp(-dtR * 3))); camera.position.copy(controls.target).add(_v2); }
+    }
+  }
+  const tr = Math.hypot(controls.target.x, controls.target.z);
+  if (tr > R) { controls.target.x *= R / tr; controls.target.z *= R / tr; }
+  controls.target.y = clamp(controls.target.y, -R * 0.3, 6);
+  controls.update();
+  sky.position.copy(camera.position); stars.position.copy(camera.position);
+}
+
+/* ---------- Sélection d'un animal + fiche ---------- */
+function select(c) {
+  selected = c; follow = true; $('cFollow').checked = true; selZoomT = 1.2; camAnim = null;
+  $('card').classList.remove('off'); updateCard(); hideHint();
+}
+function deselect() { selected = null; $('card').classList.add('off'); selRing.visible = visRing.visible = false; }
+const STATE_TXT = { wander: 'se promène', seek: 'cherche à manger', eat: 'mange', flee: 'fuit !', hunt: 'chasse', digest: 'digère', stun: 'a raté sa proie', rest: 'se repose' };
+const DEATH_TXT = { starve: 'mort de faim', old: 'mort de vieillesse', eaten: 'mangé par un prédateur', sick: 'mort de maladie' };
+function updateCard() {
+  const c = selected; if (!c) return;
+  const S = SPECIES[c.sp];
+  $('cAvatar').style.background = c._col ? c._col.getStyle() : (c.sp ? '#ff7a59' : '#cfe0fb');
+  $('cAvatar').className = 'avatar' + (c.sp ? ' pred' : '');
+  $('cTitle').textContent = `${S.name} #${c.id}`;
+  let st = c.dead ? '† ' + DEATH_TXT[c.cause] : (c.state === 'hunt' && !c.sprint ? 'traque une proie' : STATE_TXT[c.state] || c.state);
+  if (!c.dead && c.infected > 0) st += ' · malade';
+  $('cSub').textContent = `Génération ${c.gen} · ${st}`;
+  $('cAge').textContent = `${Math.floor(c.age)} / ${Math.round(P[S.life] * c.lifeF)} s`;
+  $('cKids').textContent = c.kids;
+  const maxE = P[S.repro] * COST.maxE[c.sp], e = c.dead ? 0 : Math.max(0, c.energy);
+  $('cEnergy').textContent = c.dead ? '—' : `${Math.round(e)} / ${Math.round(maxE)}`;
+  const eb = $('cEbar'); eb.style.width = clamp(e / maxE * 100, 0, 100) + '%';
+  eb.style.background = e / maxE < 0.25 ? 'var(--danger)' : e >= P[S.repro] ? 'var(--accent)' : 'var(--plant)';
+  const genes = [['Vitesse', c.genes.speed, fx(P[S.speed] * c.genes.speed, 1) + ' m/s', '#ff9f0a'], ['Vision', c.genes.vision, fx(P[S.vision] * c.genes.vision, 1) + ' m', '#af52de'], ['Taille', c.genes.size, '×' + fx(c.genes.size, 2), '#00a5a8']];
+  $('cGenes').innerHTML = genes.map(([l, g, txt, col]) => {
+    const d = Math.round((g - 1) * 100), cls = d > 0 ? 'up' : d < 0 ? 'down' : '';
+    return `<div class="gene"><span>${l}</span><div class="gbar"><i style="width:${clamp((g - 0.5) / 1.5 * 100, 2, 100)}%;background:${col}"></i><u></u></div><b>${txt} <em class="${cls}">${d > 0 ? '+' : ''}${d} %</em></b></div>`;
+  }).join('');
+}
+function updateSelection(time) {
+  const c = selected;
+  if (!c) return;
+  const R = P.worldSize, y = heightAt(c.x, c.z, R);
+  const s = c.genes.size * ANIMAL_SCALE[c.sp] * (c.sp ? 1.1 : 0.85);
+  selRing.visible = true; selRing.position.set(c.x, y + 0.07, c.z); selRing.scale.setScalar(s * (1 + Math.sin(time * 5) * 0.06));
+  const vis = P[SPECIES[c.sp].vision] * c.genes.vision;
+  visRing.visible = !c.dead; visRing.position.set(c.x, y + 0.1, c.z); visRing.scale.setScalar(vis);
+}
+
+/* ---------- Toucher : tap = nourriture / sélection, appui long = prédateur ---------- */
+const raycaster = new THREE.Raycaster(), ndc = new THREE.Vector2();
+function groundAt(cx, cy) {
+  const r = canvas.getBoundingClientRect();
+  ndc.set((cx - r.left) / r.width * 2 - 1, -((cy - r.top) / r.height) * 2 + 1);
+  raycaster.setFromCamera(ndc, camera);
+  const hit = raycaster.intersectObject(terrainTop, false)[0];
+  return hit && Math.hypot(hit.point.x, hit.point.z) < P.worldSize - 0.5 ? hit.point : null;
+}
+function pickAnimal(cx, cy) {
+  const r = canvas.getBoundingClientRect(), R = P.worldSize, f = Math.tan(THREE.MathUtils.degToRad(camera.fov) / 2);
+  let best = null, bd = Infinity;
+  for (const arr of sim.creatures) for (const c of arr) {
+    if (c.dead) continue;
+    _v.set(c.x, heightAt(c.x, c.z, R) + 0.45 * c.genes.size, c.z);
+    const dist = _v.distanceTo(camera.position);
+    _v.project(camera); if (_v.z > 1) continue;
+    const sx = r.left + (_v.x + 1) / 2 * r.width, sy = r.top + (1 - _v.y) / 2 * r.height;
+    const d = Math.hypot(sx - cx, sy - cy), pr = 0.6 * c.genes.size / (dist * f) * r.height / 2;
+    if (d < Math.max(18, pr * 1.4) && d < bd) { bd = d; best = c; }
+  }
+  return best;
+}
+let press = null;
+const pressEl = $('press');
+function cancelPress() { if (press) { clearTimeout(press.timer); clearTimeout(press.showT); cancelAnimationFrame(press.raf); } press = null; pressEl.classList.remove('on'); }
+canvas.addEventListener('contextmenu', e => e.preventDefault());
+canvas.addEventListener('pointerdown', e => {
+  if (press && press.id !== e.pointerId) { cancelPress(); return; } // 2e doigt : c'est un geste de caméra
+  if (!e.isPrimary) return;
+  cancelPress();
+  press = { id: e.pointerId, x: e.clientX, y: e.clientY, t0: performance.now(), long: false };
+  press.showT = setTimeout(() => {
+    if (!press) return;
+    pressEl.style.left = press.x + 'px'; pressEl.style.top = press.y + 'px'; pressEl.classList.add('on');
+    const anim = () => { if (!press) return; pressEl.style.setProperty('--a', clamp((performance.now() - press.t0 - 150) / 400, 0, 1)); press.raf = requestAnimationFrame(anim); };
+    anim();
+  }, 150);
+  press.timer = setTimeout(() => {
+    if (!press) return;
+    press.long = true; pressEl.classList.remove('on');
+    const g = groundAt(press.x, press.y);
+    if (g) {
+      const c = sim.addPredator(g.x, g.z);
+      if (navigator.vibrate) try { navigator.vibrate(25); } catch (err) { /* ignoré */ }
+      toast('🦊 Prédateur ajouté'); hideHint();
+      if (c) c._pulse = 1;
+    }
+  }, 550);
+});
+canvas.addEventListener('pointermove', e => {
+  if (press && e.pointerId === press.id && Math.hypot(e.clientX - press.x, e.clientY - press.y) > 10) cancelPress();
+});
+canvas.addEventListener('pointerup', e => {
+  if (!press || e.pointerId !== press.id) return;
+  const p = press; cancelPress();
+  if (p.long || performance.now() - p.t0 > 450) return;
+  onTap(p.x, p.y);
+});
+canvas.addEventListener('pointercancel', cancelPress);
+function onTap(x, y) {
+  if ($('settings').classList.contains('open')) { openSettings(false); return; }
+  const c = pickAnimal(x, y);
+  if (c) { select(c); return; }
+  const g = groundAt(x, y);
+  if (g) { sim.addFood(g.x, g.z); hideHint(); if (!ui.foodToast) { toast('🍓 Nourriture ajoutée'); ui.foodToast = true; } }
+}
+
+/* ---------- Effets déclenchés par les évènements de la simulation ---------- */
+const CAT_INFO = { drought: ['☀️', 'Sécheresse'], epidemic: ['🦠', 'Épidémie'], rain: ['🌧️', 'Pluie'] };
+function findCreature(sp, id) { for (const c of sim.creatures[sp]) if (c.id === id) return c; return null; }
+function handleEvents() {
+  const R = P.worldSize;
+  for (const e of sim.events) {
+    const y = e.x !== undefined ? heightAt(e.x, e.z, R) + 0.5 : 0;
+    switch (e.type) {
+      case 'birth': {
+        burst(e.x, y + 0.2, e.z, 6, PC.love, { speed: 1, up: 2.2, life: 0.9, size: 0.09, g: 1.5 });
+        const par = findCreature(e.sp, e.parent); if (par) par._pulse = 1;
+        break;
+      }
+      case 'death':
+        if (e.cause === 'eaten') burst(e.x, y, e.z, 8, PC.blood, { speed: 2.2, up: 2.5, size: 0.1 });
+        else if (e.cause === 'old') burst(e.x, y, e.z, 7, PC.soul, { speed: 0.5, up: 1.4, life: 1.4, size: 0.08, g: -0.6 });
+        else if (e.cause === 'sick') burst(e.x, y, e.z, 6, PC.sick, { speed: 0.8, up: 1.6, life: 1.1, size: 0.09, g: 0.5 });
+        else burst(e.x, y - 0.2, e.z, 7, PC.dust, { speed: 1.4, up: 1.2, size: 0.1, g: 3 });
+        if (selected && selected.id === e.id) onSelectedDeath();
+        break;
+      case 'eat': burst(e.x, y - 0.1, e.z, 5, PC.leaf, { speed: 1.5, up: 2.2, size: 0.08, life: 0.7 }); break;
+      case 'plantDeath': if (e.cause !== 'eaten') burst(e.x, y - 0.1, e.z, 3, e.cause === 'dry' ? PC.dry : PC.oldLeaf, { speed: 0.8, up: 1.2, size: 0.07, life: 0.9, g: 3 }); break;
+      case 'miss': burst(e.x, y - 0.3, e.z, 4, PC.dust, { speed: 1.6, up: 1, size: 0.08, g: 4 }); break;
+      case 'food': ripple(e.x, e.z, '#34c759', 3.4); burst(e.x, y, e.z, 10, PC.spark, { speed: 1.6, up: 3, size: 0.08, life: 0.9 }); break;
+      case 'spawn': ripple(e.x, e.z, '#ff6b3d', 3.4); burst(e.x, y, e.z, 8, PC.red, { speed: 1.8, up: 2.4, size: 0.09 }); break;
+      case 'infect': burst(e.x, y + 0.4, e.z, 2, PC.sick, { speed: 0.4, up: 1, size: 0.06, life: 1, g: -0.4 }); break;
+      case 'cat': { const [em, nm] = CAT_INFO[e.cat]; toast(`${em} ${nm} !`); break; }
+      case 'catEnd': { const [em, nm] = CAT_INFO[e.cat]; toast(`${em} Fin : ${nm.toLowerCase()}`); break; }
+      case 'immigrate': toast(e.sp ? '🦊 Des prédateurs arrivent de l’extérieur' : '🐰 Des herbivores arrivent de l’extérieur'); break;
+    }
+  }
+  sim.events.length = 0;
+}
+let deathTimer = 0;
+function onSelectedDeath() {
+  updateCard(); follow = false;
+  clearTimeout(deathTimer);
+  const who = selected;
+  deathTimer = setTimeout(() => { if (selected === who) deselect(); }, 2600);
+}
+
+/* ---------- Historique pour les courbes ---------- */
+const HKEYS = ['t', 'plants', 'herb', 'pred', 'eH', 'eP', 'hSpd', 'hVis', 'hSize', 'pSpd', 'pVis', 'pSize'];
+let H, sampleEvery, nextSample;
+function clearHistory() { H = Object.fromEntries(HKEYS.map(k => [k, []])); sampleEvery = 1; nextSample = 0; chart.dirty = true; }
+function recordSample() {
+  const s = sim.sample();
+  for (const k of HKEYS) H[k].push(s[k]);
+  if (H.t.length > 4000) { for (const k of HKEYS) H[k] = H[k].filter((_, i) => i % 2 === 0); sampleEvery *= 2; }
+  chart.dirty = true;
+}
+
+/* ---------- Courbes (canvas 2D, léger) ---------- */
+const COL = { plants: '#34c759', herb: '#3b82f6', pred: '#ff6b3d', spd: '#ff9f0a', vis: '#af52de', size: '#00a5a8', grid: 'rgba(60,60,67,.10)', axis: '#8e8e93' };
+const chart = { tab: 'pop', gsp: 0, cmp: 'herb', hidden: new Set(), span: null, end: null, dirty: true, open: false };
+let ref = storeGet('ref');
+function seriesFor() {
+  switch (chart.tab) {
+    case 'pop': return [{ k: 'plants', l: 'Plantes', c: COL.plants }, { k: 'herb', l: 'Herbivores', c: COL.herb }, { k: 'pred', l: 'Prédateurs', c: COL.pred }];
+    case 'energy': return [{ k: 'eH', l: 'Herbivores', c: COL.herb, d: 0 }, { k: 'eP', l: 'Prédateurs', c: COL.pred, d: 0 }];
+    case 'genes': { const p = chart.gsp ? 'p' : 'h'; return [{ k: p + 'Spd', l: 'Vitesse', c: COL.spd, u: ' %' }, { k: p + 'Vis', l: 'Vision', c: COL.vis, u: ' %' }, { k: p + 'Size', l: 'Taille', c: COL.size, u: ' %' }]; }
+    default: { const c = COL[chart.cmp]; return [{ k: chart.cmp, l: 'Actuel', c }, { k: chart.cmp, l: 'Référence', c, ref: true }]; }
+  }
+}
+function buildChartSub() {
+  const sub = $('chartSub');
+  if (chart.tab === 'genes') {
+    sub.innerHTML = `<button class="chip ${chart.gsp ? '' : 'on'}" data-gsp="0">Herbivores</button><button class="chip ${chart.gsp ? 'on' : ''}" data-gsp="1">Prédateurs</button><span class="note" style="margin:0 0 0 4px">100 % = valeur de départ</span>`;
+  } else if (chart.tab === 'compare') {
+    const keys = [['herb', 'Herbivores'], ['pred', 'Prédateurs'], ['plants', 'Plantes']];
+    sub.innerHTML = keys.map(([k, l]) => `<button class="chip ${chart.cmp === k ? 'on' : ''}" data-cmp="${k}">${l}</button>`).join('') +
+      `<button class="chip" id="bRef">📌 Mémoriser</button>` +
+      `<div class="note" style="width:100%;margin:0 2px">${ref ? `Référence : <b>${ref.label}</b> · change les réglages, Reset, compare.` : '📌 garde cette partie comme référence → change les réglages → Reset → compare.'}</div>`;
+  } else if (chart.tab === 'energy') {
+    sub.innerHTML = '<span class="note" style="margin:0 2px">Énergie moyenne d’un individu</span>';
+  } else sub.innerHTML = '<span class="note" style="margin:0 2px">Nombre d’individus vivants</span>';
+}
+$('chartSub').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  if (b.dataset.gsp) chart.gsp = +b.dataset.gsp;
+  else if (b.dataset.cmp) chart.cmp = b.dataset.cmp;
+  else if (b.id === 'bRef') {
+    if (H.t.length < 3) { toast('Laisse tourner la simulation quelques secondes'); return; }
+    ref = { label: `${ui.presetName} · ${fmtTime(sim.t)}`, t: H.t.slice(), plants: H.plants.slice(), herb: H.herb.slice(), pred: H.pred.slice() };
+    if (!storeSet('ref', ref)) { /* stockage indisponible : la référence reste en mémoire */ }
+    toast('📌 Référence mémorisée');
+  }
+  buildChartSub(); chart.dirty = true;
+});
+$('chartTabs').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  chart.tab = b.dataset.tab; chart.hidden.clear();
+  for (const x of $('chartTabs').children) x.classList.toggle('on', x === b);
+  buildChartSub(); chart.dirty = true;
+});
+$('legend').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  const l = b.dataset.l; chart.hidden.has(l) ? chart.hidden.delete(l) : chart.hidden.add(l); chart.dirty = true;
+});
+function lastVal(arr) { for (let i = arr.length - 1; i >= 0; i--) if (!Number.isNaN(arr[i])) return arr[i]; return NaN; }
+function updateLegend(series) {
+  $('legend').innerHTML = series.map(s => {
+    const src = s.ref ? ref : H;
+    const v = src && src[s.k] ? lastVal(src[s.k]) : NaN;
+    const txt = Number.isNaN(v) ? '—' : Math.round(v) + (s.u || '');
+    return `<button class="chip ${chart.hidden.has(s.l) ? 'off' : ''}" data-l="${s.l}"><i class="${s.ref ? 'dash' : ''}" style="background:${s.c};color:${s.c}"></i>${s.l} <b>${txt}</b></button>`;
+  }).join('');
+}
+function niceStep(range, n) {
+  const raw = range / n, p = Math.pow(10, Math.floor(Math.log10(raw))), f = raw / p;
+  return (f < 1.5 ? 1 : f < 3 ? 2 : f < 7 ? 5 : 10) * p;
+}
+const TSTEPS = [5, 10, 15, 30, 60, 120, 300, 600, 900, 1800, 3600, 7200];
+function viewRange() {
+  const tNow = H.t.length ? H.t[H.t.length - 1] : 0;
+  const tMax = Math.max(tNow, chart.tab === 'compare' && ref ? ref.t[ref.t.length - 1] : 0, 20);
+  if (chart.span == null) return [0, tMax, tMax];
+  const end = chart.end == null ? tMax : Math.min(chart.end, tMax);
+  return [Math.max(0, end - chart.span), Math.max(end, chart.span), tMax];
+}
+const PAD = { l: 38, r: 10, t: 10, b: 22 };
+function drawChart() {
+  const cv = $('chart'), wrap = cv.parentElement, w = wrap.clientWidth, h = wrap.clientHeight;
+  if (!w || !h) return;
+  const dpr = Math.min(2, DPR);
+  if (cv.width !== Math.round(w * dpr) || cv.height !== Math.round(h * dpr)) { cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr); }
+  const ctx = cv.getContext('2d');
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, w, h);
+  const all = seriesFor(); updateLegend(all);
+  const series = all.filter(s => !chart.hidden.has(s.l) && (!s.ref || ref));
+  const [x0, x1] = viewRange();
+  const pw = w - PAD.l - PAD.r, ph = h - PAD.t - PAD.b;
+  // échelle verticale automatique sur les données visibles
+  let lo = Infinity, hi = -Infinity;
+  for (const s of series) {
+    const src = s.ref ? ref : H, T = src.t, A = src[s.k];
+    for (let i = 0; i < T.length; i++) if (T[i] >= x0 && T[i] <= x1 && !Number.isNaN(A[i])) { lo = Math.min(lo, A[i]); hi = Math.max(hi, A[i]); }
+  }
+  const isGenes = chart.tab === 'genes';
+  if (!Number.isFinite(lo)) { lo = isGenes ? 90 : 0; hi = isGenes ? 110 : 10; }
+  if (isGenes) { lo = Math.min(lo, 100); hi = Math.max(hi, 100); const pad = Math.max(4, (hi - lo) * 0.12); lo -= pad; hi += pad; }
+  else { lo = 0; hi = Math.max(hi * 1.1, 5); }
+  const ys = niceStep(hi - lo, 4); lo = Math.floor(lo / ys) * ys; hi = Math.ceil(hi / ys) * ys;
+  const X = t => PAD.l + (t - x0) / (x1 - x0) * pw, Y = v => PAD.t + (1 - (v - lo) / (hi - lo)) * ph;
+  ctx.font = '11px ' + getComputedStyle(document.body).fontFamily; ctx.lineWidth = 1;
+  ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+  for (let v = lo; v <= hi + 1e-9; v += ys) {
+    const y = Math.round(Y(v)) + 0.5;
+    ctx.strokeStyle = COL.grid; ctx.beginPath(); ctx.moveTo(PAD.l, y); ctx.lineTo(w - PAD.r, y); ctx.stroke();
+    ctx.fillStyle = COL.axis; ctx.fillText(Math.round(v) + (isGenes ? '%' : ''), PAD.l - 6, y);
+  }
+  const span = x1 - x0, ts = TSTEPS.find(s => span / s <= 5) || 7200;
+  ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+  for (let t = Math.ceil(x0 / ts) * ts; t <= x1; t += ts) { const x = X(t); ctx.fillStyle = COL.axis; ctx.fillText(fmtTime(t), clamp(x, PAD.l + 12, w - PAD.r - 12), h - PAD.b + 6); }
+  ctx.strokeStyle = 'rgba(60,60,67,.25)'; ctx.beginPath(); ctx.moveTo(PAD.l, PAD.t + ph + 0.5); ctx.lineTo(w - PAD.r, PAD.t + ph + 0.5); ctx.stroke();
+  if (isGenes) { ctx.setLineDash([3, 4]); ctx.strokeStyle = 'rgba(60,60,67,.35)'; ctx.beginPath(); ctx.moveTo(PAD.l, Y(100)); ctx.lineTo(w - PAD.r, Y(100)); ctx.stroke(); ctx.setLineDash([]); }
+  ctx.save(); ctx.beginPath(); ctx.rect(PAD.l, PAD.t - 4, pw, ph + 8); ctx.clip();
+  for (const s of series) {
+    const src = s.ref ? ref : H, T = src.t, A = src[s.k];
+    let i0 = 0; while (i0 < T.length && T[i0] < x0) i0++; i0 = Math.max(0, i0 - 1);
+    let i1 = i0; while (i1 < T.length && T[i1] <= x1) i1++; i1 = Math.min(T.length - 1, i1);
+    const step = Math.max(1, Math.floor((i1 - i0) / (pw * 1.5)));
+    ctx.strokeStyle = s.c; ctx.lineWidth = s.ref ? 2 : 2.4; ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+    ctx.setLineDash(s.ref ? [6, 5] : []); ctx.globalAlpha = s.ref ? 0.7 : 1;
+    ctx.beginPath(); let pen = false, lx = 0, ly = 0;
+    for (let i = i0; i <= i1; i += step) {
+      const v = A[i]; if (Number.isNaN(v) || v === undefined) { pen = false; continue; }
+      lx = X(T[i]); ly = Y(v);
+      if (pen) ctx.lineTo(lx, ly); else { ctx.moveTo(lx, ly); pen = true; }
+    }
+    ctx.stroke(); ctx.setLineDash([]);
+    if (pen && !s.ref) { ctx.fillStyle = s.c; ctx.beginPath(); ctx.arc(lx, ly, 3.2, 0, 6.283); ctx.fill(); }
+    ctx.globalAlpha = 1;
+  }
+  ctx.restore();
+  $('chartLive').classList.toggle('hidden', chart.span == null && chart.end == null);
+}
+// Mini-courbe dans la poignée (quand le panneau est replié)
+function drawMini() {
+  const cv = $('miniChart'), w = cv.clientWidth, h = cv.clientHeight; if (!w) return;
+  const dpr = Math.min(2, DPR);
+  if (cv.width !== Math.round(w * dpr)) { cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr); }
+  const ctx = cv.getContext('2d'); ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, w, h);
+  const n = H.t.length; if (n < 2) return;
+  const i0 = Math.max(0, n - 120);
+  for (const [k, c] of [['plants', COL.plants], ['herb', COL.herb], ['pred', COL.pred]]) {
+    let mx = 1; for (let i = i0; i < n; i++) mx = Math.max(mx, H[k][i]);
+    ctx.strokeStyle = c; ctx.lineWidth = 1.6; ctx.globalAlpha = 0.85; ctx.beginPath();
+    for (let i = i0; i < n; i++) { const x = (i - i0) / Math.max(1, n - 1 - i0) * w, y = h - 2 - H[k][i] / mx * (h - 4); i === i0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y); }
+    ctx.stroke();
+  }
+  ctx.globalAlpha = 1;
+}
+// Zoom au doigt sur les courbes
+(() => {
+  const cv = $('chart'), pts = new Map(); let pinch = null, pan = null, lastTap = 0;
+  const geom = () => { const w = cv.clientWidth; return { pw: w - PAD.l - PAD.r }; };
+  cv.addEventListener('pointerdown', e => {
+    cv.setPointerCapture(e.pointerId); pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    const [x0, x1, tMax] = viewRange();
+    if (pts.size === 2) {
+      const [a, b] = [...pts.values()], rect = cv.getBoundingClientRect();
+      pinch = { d: Math.abs(a.x - b.x) + 1, x0, x1, tMax, mid: (a.x + b.x) / 2 - rect.left - PAD.l }; pan = null;
+    } else if (pts.size === 1) {
+      pan = { x: e.clientX, x0, x1, tMax };
+      const now = performance.now();
+      if (now - lastTap < 320) { chart.span = chart.end = null; chart.dirty = true; }
+      lastTap = now;
+    }
+  });
+  cv.addEventListener('pointermove', e => {
+    if (!pts.has(e.pointerId)) return;
+    pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    const { pw } = geom();
+    if (pinch && pts.size === 2) {
+      const [a, b] = [...pts.values()], d = Math.abs(a.x - b.x) + 1;
+      const span0 = pinch.x1 - pinch.x0, span = clamp(span0 * pinch.d / d, 10, Math.max(20, pinch.tMax));
+      const tMid = pinch.x0 + clamp(pinch.mid / pw, 0, 1) * span0;
+      let s0 = tMid - clamp(pinch.mid / pw, 0, 1) * span; s0 = clamp(s0, 0, Math.max(0, pinch.tMax - span));
+      chart.span = span; chart.end = s0 + span >= pinch.tMax - 0.5 ? null : s0 + span; chart.dirty = true;
+    } else if (pan && pts.size === 1) {
+      const span = pan.x1 - pan.x0, dt = -(e.clientX - pan.x) / pw * span;
+      if (Math.abs(e.clientX - pan.x) < 4) return;
+      const end = clamp(pan.x1 + dt, span, pan.tMax);
+      chart.span = span; chart.end = end >= pan.tMax - 0.5 ? null : end; chart.dirty = true;
+    }
+  });
+  const up = e => { pts.delete(e.pointerId); if (pts.size < 2) pinch = null; if (pts.size === 0) pan = null; };
+  cv.addEventListener('pointerup', up); cv.addEventListener('pointercancel', up);
+})();
+$('chartLive').addEventListener('click', () => { chart.span = chart.end = null; chart.dirty = true; });
+$('chartHandle').addEventListener('click', () => {
+  chart.open = !chart.open; $('charts').classList.toggle('open', chart.open); $('chartHandle').setAttribute('aria-expanded', chart.open);
+  chart.dirty = true; hideHint();
+});
+function exportCSV() {
+  const head = ['temps_s', 'plantes', 'herbivores', 'predateurs', 'energie_moy_herbivores', 'energie_moy_predateurs', 'herb_vitesse_pct', 'herb_vision_pct', 'herb_taille_pct', 'pred_vitesse_pct', 'pred_vision_pct', 'pred_taille_pct'];
+  const f = v => Number.isNaN(v) || v === undefined ? '' : (+v.toFixed(2)).toString();
+  let s = head.join(',') + '\n';
+  for (let i = 0; i < H.t.length; i++) s += HKEYS.map(k => f(H[k][i])).join(',') + '\n';
+  if (ref) {
+    s += `\nreference,"${ref.label}"\ntemps_s,plantes,herbivores,predateurs\n`;
+    for (let i = 0; i < ref.t.length; i++) s += [ref.t[i], ref.plants[i], ref.herb[i], ref.pred[i]].map(f).join(',') + '\n';
+  }
+  const d = new Date(), pad = n => String(n).padStart(2, '0');
+  const name = `ecosysteme-${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}-${pad(d.getHours())}${pad(d.getMinutes())}.csv`;
+  const url = URL.createObjectURL(new Blob([s], { type: 'text/csv;charset=utf-8' }));
+  const a = document.createElement('a'); a.href = url; a.download = name; document.body.appendChild(a); a.click();
+  setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 1500);
+  toast('📄 ' + name);
+}
+$('bExport').addEventListener('click', exportCSV);
+
+/* ---------- Panneau de réglages ---------- */
+const pct = v => Math.round(v * 100) + ' %';
+const speedTxt = v => fx(v, 2).replace(/,?0+$/, '') + '×';
+const SECTIONS = [
+  { id: 'plants', label: 'Plantes', note: 'Les plantes germent surtout près des autres plantes, grandissent, puis meurent de vieillesse.', items: [
+    { k: 'plantGrowth', l: 'Vitesse de pousse', min: 0.2, max: 3, step: 0.05, f: speedTxt },
+    { k: 'plantMax', l: 'Nombre maximum', min: 50, max: 600, step: 10, f: v => v },
+  ] },
+  { id: 'herb', label: 'Herbivores', note: 'Ils cherchent les plantes et fuient les prédateurs qu’ils voient.', items: [
+    { k: 'hCount', l: 'Nombre de départ', min: 0, max: 150, step: 1, f: v => v, reset: true },
+    { k: 'hSpeed', l: 'Vitesse', min: 1, max: 7, step: 0.1, f: v => fx(v) + ' m/s' },
+    { k: 'hVision', l: 'Vision', min: 2, max: 20, step: 0.5, f: v => fx(v) + ' m' },
+    { k: 'hGain', l: 'Énergie gagnée en mangeant', min: 4, max: 60, step: 1, f: v => '+' + v },
+    { k: 'hCost', l: 'Coût énergétique', min: 0.3, max: 2.5, step: 0.05, f: pct },
+    { k: 'hRepro', l: 'Seuil de reproduction', min: 20, max: 150, step: 1, f: v => v + ' ⚡' },
+    { k: 'hLife', l: 'Espérance de vie', min: 20, max: 300, step: 5, f: v => v + ' s' },
+  ] },
+  { id: 'pred', label: 'Prédateurs', note: 'Ils traquent discrètement, puis sprintent quand la proie est proche.', items: [
+    { k: 'pCount', l: 'Nombre de départ', min: 0, max: 60, step: 1, f: v => v, reset: true },
+    { k: 'pSpeed', l: 'Vitesse', min: 1, max: 8, step: 0.1, f: v => fx(v) + ' m/s' },
+    { k: 'pVision', l: 'Vision', min: 2, max: 25, step: 0.5, f: v => fx(v) + ' m' },
+    { k: 'pGain', l: 'Énergie gagnée en mangeant', min: 5, max: 120, step: 1, f: v => '+' + v },
+    { k: 'pCost', l: 'Coût énergétique', min: 0.3, max: 2.5, step: 0.05, f: pct },
+    { k: 'pRepro', l: 'Seuil de reproduction', min: 20, max: 200, step: 1, f: v => v + ' ⚡' },
+    { k: 'pLife', l: 'Espérance de vie', min: 20, max: 300, step: 5, f: v => v + ' s' },
+  ] },
+  { id: 'evo', label: 'Évolution', note: 'Chaque petit reçoit les gènes de son parent (vitesse, vision, taille). Le taux = la chance que chaque gène change ; la force = de combien il peut changer. Être grand rend plus fort, mais coûte plus d’énergie.', items: [
+    { k: 'mutRate', l: 'Taux de mutation', min: 0, max: 1, step: 0.01, f: pct },
+    { k: 'mutStrength', l: 'Force de la mutation', min: 0, max: 0.5, step: 0.01, f: v => '± ' + pct(v) },
+  ] },
+  { id: 'world', label: 'Monde', items: [
+    { k: 'worldSize', l: 'Taille du terrain (rayon)', min: 15, max: 45, step: 1, f: v => v + ' m' },
+    { k: 'simSpeed', l: 'Vitesse de la simulation', min: 0.5, max: 5, step: 0.25, f: speedTxt },
+    { k: 'maxCreatures', l: 'Nombre maximum d’animaux', min: 50, max: 400, step: 10, f: v => v, hint: 'Environ 300 max conseillé sur téléphone' },
+    { k: 'dayNight', l: 'Cycle jour / nuit', type: 'toggle', hint: 'La nuit, les plantes poussent moins vite' },
+    { k: 'dayLength', l: 'Durée d’une journée', min: 30, max: 600, step: 10, f: v => v + ' s' },
+    { k: 'respawn', l: 'Réapparition si extinction', type: 'toggle', hint: 'Quelques animaux arrivent si une espèce disparaît' },
+    { k: 'quality', l: 'Qualité graphique', type: 'seg', opts: [['auto', 'Auto'], ['high', 'Haute'], ['low', 'Économie']] },
+  ] },
+];
+let sTab = 'plants';
+function buildSettings() {
+  $('presets').innerHTML = PRESETS.map(p => `<button class="chip" data-preset="${p.id}">${p.name}</button>`).join('');
+  $('sTabs').innerHTML = SECTIONS.map(s => `<button data-s="${s.id}" class="${s.id === sTab ? 'on' : ''}">${s.label}</button>`).join('');
+  $('sBody').innerHTML = SECTIONS.map(s => `<div data-sec="${s.id}" class="${s.id === sTab ? '' : 'hidden'}">${s.note ? `<p class="note">${s.note}</p>` : ''}${s.items.map(it => {
+    if (it.type === 'toggle') return `<div class="row flex"><div><label for="in-${it.k}">${it.l}</label>${it.hint ? `<small>${it.hint}</small>` : ''}</div><label class="switch"><input type="checkbox" id="in-${it.k}" data-k="${it.k}"><span></span></label></div>`;
+    if (it.type === 'seg') return `<div class="row flex"><label>${it.l}</label><div class="seg" data-seg="${it.k}">${it.opts.map(([v, l]) => `<button data-v="${v}">${l}</button>`).join('')}</div></div>`;
+    return `<div class="row"><div class="row-top"><label for="in-${it.k}">${it.l}</label><output id="out-${it.k}"></output></div>${it.reset ? '<small class="reset-hint">Appliqué au prochain Reset</small>' : it.hint ? `<small>${it.hint}</small>` : ''}<input type="range" id="in-${it.k}" data-k="${it.k}" min="${it.min}" max="${it.max}" step="${it.step}"></div>`;
+  }).join('')}</div>`).join('');
+}
+const ITEMS = Object.fromEntries(SECTIONS.flatMap(s => s.items).map(it => [it.k, it]));
+function paintRange(inp) { const it = ITEMS[inp.dataset.k]; inp.style.setProperty('--p', ((inp.value - it.min) / (it.max - it.min) * 100) + '%'); }
+function syncSettings() {
+  for (const inp of $('sBody').querySelectorAll('input[data-k]')) {
+    const k = inp.dataset.k;
+    if (inp.type === 'checkbox') inp.checked = !!P[k];
+    else { inp.value = P[k]; paintRange(inp); $('out-' + k).textContent = ITEMS[k].f(+P[k]); }
+  }
+  for (const b of $('sBody').querySelectorAll('[data-seg="quality"] button')) b.classList.toggle('on', b.dataset.v === ui.quality);
+  for (const b of $('presets').children) b.classList.toggle('on', PRESETS.find(p => p.id === b.dataset.preset)?.name === ui.presetName);
+  updateSpeedBtn();
+}
+$('sBody').addEventListener('input', e => {
+  const inp = e.target, k = inp.dataset.k; if (!k) return;
+  P[k] = inp.type === 'checkbox' ? inp.checked : +inp.value;
+  if (inp.type !== 'checkbox') { paintRange(inp); $('out-' + k).textContent = ITEMS[k].f(P[k]); }
+  if (k !== 'simSpeed') { ui.presetName = 'Personnalisé'; for (const b of $('presets').children) b.classList.remove('on'); }
+  if (k === 'worldSize') { sim.resize(); scheduleTerrain(); }
+  if (k === 'simSpeed') updateSpeedBtn();
+});
+$('sBody').addEventListener('click', e => {
+  const b = e.target.closest('[data-seg] button'); if (!b) return;
+  setQuality(b.dataset.v); syncSettings();
+});
+$('sTabs').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  sTab = b.dataset.s;
+  for (const x of $('sTabs').children) x.classList.toggle('on', x === b);
+  for (const d of $('sBody').children) d.classList.toggle('hidden', d.dataset.sec !== sTab);
+  $('sBody').scrollTop = 0;
+});
+$('presets').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  const pr = PRESETS.find(p => p.id === b.dataset.preset);
+  const keep = { simSpeed: P.simSpeed, dayNight: P.dayNight, dayLength: P.dayLength, respawn: P.respawn };
+  const oldR = P.worldSize;
+  Object.assign(P, DEFAULTS, pr.values, keep);
+  ui.presetName = pr.name;
+  resetWorld(oldR !== P.worldSize);
+  syncSettings(); toast(`Préréglage « ${pr.name} »`);
+});
+function openSettings(v) {
+  $('settings').classList.toggle('open', v); document.body.classList.toggle('sheet-open', v);
+  if (v) { syncSettings(); hideHint(); }
+}
+$('bSettings').addEventListener('click', () => openSettings(!$('settings').classList.contains('open')));
+$('sClose').addEventListener('click', () => openSettings(false));
+$('sGrab').addEventListener('click', () => openSettings(false));
+$('sReset').addEventListener('click', () => { resetWorld(false); toast('🌱 Nouveau monde'); });
+$('sSave').addEventListener('click', () => toast(storeSet('settings', { params: { ...P }, quality: ui.quality, preset: ui.presetName }) ? '💾 Réglages sauvegardés' : 'Sauvegarde impossible sur ce navigateur'));
+$('sLoad').addEventListener('click', () => {
+  const s = storeGet('settings');
+  if (!s || !s.params) { toast('Aucune sauvegarde pour le moment'); return; }
+  const oldR = P.worldSize;
+  for (const k in DEFAULTS) if (k in s.params) P[k] = s.params[k];
+  ui.presetName = s.preset || 'Personnalisé';
+  if (s.quality) setQuality(s.quality);
+  if (oldR !== P.worldSize) { sim.resize(); buildTerrain(); }
+  syncSettings(); toast('📂 Réglages chargés');
+});
+function resetWorld(newTerrain) {
+  sim.reset(randSeed());
+  if (newTerrain || terrainR !== P.worldSize) buildTerrain();
+  deselect(); parts.length = 0; clearHistory(); goHome(true);
+}
+
+/* ---------- Barre d'outils ---------- */
+const ICON_PAUSE = '<svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4.5" width="4" height="15" rx="1.4"/><rect x="14" y="4.5" width="4" height="15" rx="1.4"/></svg>';
+const ICON_PLAY = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 4.8v14.4a1 1 0 0 0 1.5.86l11.6-7.2a1 1 0 0 0 0-1.72L8.5 3.94A1 1 0 0 0 7 4.8z"/></svg>';
+function setPaused(v) {
+  paused = v;
+  $('bPause').innerHTML = v ? ICON_PLAY : ICON_PAUSE; $('bPause').setAttribute('aria-label', v ? 'Lecture' : 'Pause');
+  $('sPause').innerHTML = (v ? ICON_PLAY : ICON_PAUSE) + (v ? 'Lecture' : 'Pause'); $('sPause').classList.toggle('on', v);
+}
+$('bPause').addEventListener('click', () => setPaused(!paused));
+$('sPause').addEventListener('click', () => setPaused(!paused));
+const SPEEDS = [0.5, 1, 2, 3, 5];
+function updateSpeedBtn() { $('bSpeed').textContent = speedTxt(P.simSpeed); }
+$('bSpeed').addEventListener('click', () => {
+  const i = SPEEDS.findIndex(s => s > P.simSpeed + 1e-6);
+  P.simSpeed = i < 0 ? SPEEDS[0] : SPEEDS[i];
+  updateSpeedBtn(); syncSettings();
+});
+$('bCenter').addEventListener('click', () => { deselect(); goHome(true); });
+$('bCat').addEventListener('click', () => { $('catSheet').classList.remove('hidden'); document.body.classList.add('sheet-open'); });
+$('catSheet').addEventListener('click', e => {
+  const b = e.target.closest('[data-cat]');
+  if (b) sim.triggerCatastrophe(b.dataset.cat);
+  if (b || e.target.id === 'catCancel' || e.target === $('catSheet')) { $('catSheet').classList.add('hidden'); document.body.classList.remove('sheet-open'); }
+});
+$('cClose').addEventListener('click', deselect);
+$('cFollow').addEventListener('change', e => { follow = e.target.checked; });
+
+/* ---------- Petits messages ---------- */
+let toastT = 0;
+function toast(msg) {
+  const t = $('toast'); t.textContent = msg; t.classList.add('show');
+  clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('show'), 1800);
+}
+let hintT = 0;
+function hideHint() { const h = $('hint'); if (!h.classList.contains('hidden')) { h.classList.add('fade'); setTimeout(() => h.classList.add('hidden'), 600); storeSet('hintSeen', true); } clearTimeout(hintT); }
+
+/* ---------- Qualité graphique (adaptée automatiquement à la fluidité) ---------- */
+function setQuality(q) {
+  ui.quality = q;
+  pixelRatio = q === 'high' ? Math.min(DPR, 2) : q === 'low' ? Math.min(DPR, 1) : Math.min(DPR, 1.75);
+  renderer.setPixelRatio(pixelRatio); onResize();
+  ui.lowfx = q === 'low'; document.body.classList.toggle('lowfx', ui.lowfx);
+}
+const perf = { acc: 0, n: 0, warm: 3, fps: 60 };
+function adaptQuality(dt) {
+  perf.acc += dt; perf.n++;
+  if (perf.acc < 2) return;
+  perf.fps = perf.n / perf.acc; perf.acc = 0; perf.n = 0;
+  if (perf.warm > 0) { perf.warm--; return; }
+  if (ui.quality !== 'auto' || document.hidden) return;
+  if (perf.fps < 40 && pixelRatio > 0.85) {
+    pixelRatio = Math.max(0.85, pixelRatio - 0.25); renderer.setPixelRatio(pixelRatio); onResize();
+    if (pixelRatio <= 1.25 && !ui.lowfx) { ui.lowfx = true; document.body.classList.add('lowfx'); }
+  }
+}
+
+/* ---------- Boucle principale ---------- */
+function onResize() {
+  const w = innerWidth, h = innerHeight;
+  renderer.setSize(w, h, false);
+  camera.aspect = w / h; camera.fov = w < h ? 58 : 46; camera.updateProjectionMatrix();
+  skyU.uH.value = renderer.getDrawingBufferSize(new THREE.Vector2()).y || h;
+  chart.dirty = true;
+}
+addEventListener('resize', onResize);
+let last = performance.now(), uiT = 0, chartT = 0, cardT = 0;
+const STEP = 1 / 30;
+function frame(now) {
+  requestAnimationFrame(frame);
+  let dtR = (now - last) / 1000; last = now;
+  dtR = clamp(dtR, 0.001, 0.1);
+  let simDt = 0;
+  if (!paused) {
+    simDt = dtR * P.simSpeed;
+    const n = Math.min(6, Math.ceil(simDt / STEP)), h = Math.min(simDt / n, 0.06);
+    for (let i = 0; i < n; i++) sim.step(h);
+    simDt = h * n;
+    while (sim.t >= nextSample) { recordSample(); nextSample += sampleEvery; }
+  }
+  const time = now / 1000;
+  handleEvents();
+  nShadow = 0;
+  updatePlants(time);
+  updateAnimals(dtR, simDt, time);
+  shadowMesh.count = nShadow; shadowMesh.instanceMatrix.needsUpdate = true;
+  updateParticles(dtR); updateRipples(dtR); updateRain(dtR); updateClouds(dtR);
+  updateAmbience(dtR); updateSelection(time); updateCamera(dtR);
+  renderer.render(scene, camera);
+  adaptQuality(dtR);
+
+  uiT += dtR; cardT += dtR; chartT += dtR;
+  if (uiT > 0.25) {
+    uiT = 0;
+    const c = sim.counts();
+    $('nPlants').textContent = c.plants; $('nHerbs').textContent = c.herb; $('nPreds').textContent = c.pred;
+    $('simTime').textContent = fmtTime(sim.t);
+    $('dayIcon').textContent = !P.dayNight ? '☀️' : daylight > 0.6 ? '☀️' : daylight > 0.25 ? '🌅' : '🌙';
+    const cat = sim.cat, bn = $('catBanner');
+    if (cat) { const [em, nm] = CAT_INFO[cat.type]; bn.classList.remove('hidden'); $('catText').textContent = `${em} ${nm} · ${Math.ceil(cat.left)} s`; $('catBar').style.width = (cat.left / cat.dur * 100) + '%'; }
+    else bn.classList.add('hidden');
+    $('card').style.top = cat ? 'calc(var(--st) + 112px)' : '';
+  }
+  if (cardT > 0.2 && selected) { cardT = 0; updateCard(); }
+  if (chartT > 0.25 && chart.dirty) {
+    chartT = 0; chart.dirty = false;
+    if (chart.open) drawChart(); else drawMini();
+  }
+}
+
+/* ---------- Démarrage ---------- */
+clearHistory();
+buildTerrain(); buildSettings(); buildChartSub();
+setPaused(false); onResize(); goHome(false); syncSettings();
+requestAnimationFrame(t => { last = t; requestAnimationFrame(frame); });
+window.__ecoStarted = true;
+$('loading').style.opacity = 0; setTimeout(() => $('loading').remove(), 600);
+if (!storeGet('hintSeen')) { $('hint').classList.remove('hidden'); hintT = setTimeout(hideHint, 9000); }
+// Accès de débogage / tests automatisés
+window.__eco = { sim, camera, controls, select, deselect, pickAnimal, groundAt, onTap, exportCSV, get selected() { return selected; }, get perf() { return perf; }, get history() { return H; }, chart, drawChart };
+</script>
+</body>
+</html>
