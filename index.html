@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#f4f4f1">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="description" content="Simulation d'écosystème 3D : plantes, herbivores, prédateurs et charognards qui évoluent par sélection naturelle. Défis, records et mutations rares.">
+<meta name="description" content="Simulation d'écosystème 3D : plantes, animaux, oiseaux, poissons et une tribu humaine qui évolue de la grotte à l'énergie solaire. Sélection naturelle, défis et records.">
 <title>Écosystème 3D</title>
 <style>
 :root{
@@ -31,9 +31,10 @@ body.lowfx .glass{-webkit-backdrop-filter:none;backdrop-filter:none;background:v
 
 /* ---------- Barre du haut ---------- */
 #topbar{position:fixed;top:calc(var(--st) + 10px);left:50%;transform:translateX(-50%);z-index:10;
-  display:flex;align-items:center;gap:4px;padding:6px 8px;border-radius:999px;white-space:nowrap}
-.pop{display:flex;align-items:center;gap:5px;padding:4px 5px;border-radius:999px}
-.pop b{font-size:15px;font-weight:650;font-variant-numeric:tabular-nums;min-width:20px}
+  display:flex;align-items:center;gap:2px;padding:6px 8px;border-radius:999px;white-space:nowrap;max-width:calc(100vw - 12px)}
+.pop{display:flex;align-items:center;gap:1px;padding:4px 2px;border-radius:999px}
+.pop b{font-size:13.5px;font-weight:650;font-variant-numeric:tabular-nums;letter-spacing:-.2px}
+.pop .em{font-size:12.5px;line-height:1}
 .pop small{display:block;font-size:9.5px;color:var(--text2);font-weight:500;margin-top:-1px}
 .pop .num{display:flex;flex-direction:column;line-height:1.15}
 .ico{width:12px;height:12px;border-radius:50%;flex:none}
@@ -41,7 +42,7 @@ body.lowfx .glass{-webkit-backdrop-filter:none;backdrop-filter:none;background:v
 .ico.pred{width:0;height:0;border-radius:0;border-left:7px solid transparent;border-right:7px solid transparent;border-bottom:12px solid var(--pred)}
 .ico.scav{width:10px;height:10px;border-radius:2px;background:var(--scav);transform:rotate(45deg)}
 #topbar .sep{width:1px;height:26px;background:var(--hair);margin:0 2px}
-#clock{display:flex;align-items:center;gap:4px;padding:4px 6px 4px 4px;font-size:13.5px;font-weight:600;font-variant-numeric:tabular-nums;color:var(--text2)}
+#clock{display:flex;align-items:center;gap:3px;padding:4px 4px 4px 2px;font-size:12.5px;font-weight:600;font-variant-numeric:tabular-nums;color:var(--text2)}
 #dayIcon{font-size:15px}
 #hud{position:fixed;top:calc(var(--st) + 66px);left:50%;transform:translateX(-50%);z-index:9;display:flex;flex-direction:column;align-items:center;gap:6px;pointer-events:none;width:max-content;max-width:calc(100% - 20px)}
 #hud > *{pointer-events:auto}
@@ -51,6 +52,24 @@ body.lowfx .glass{-webkit-backdrop-filter:none;backdrop-filter:none;background:v
 #chalPill .bar,#chalPill .bar i{display:block;height:100%;background:var(--gold);border-radius:3px}
 #chalPill .budget{color:var(--accent);font-variant-numeric:tabular-nums}
 #docPill{font-size:13px;color:var(--text2)}
+#civPill{border:0;font-family:inherit;color:inherit;cursor:pointer;font-size:13px;padding:6px 12px;gap:7px}
+#civPill i{font-style:normal;color:var(--text2);font-weight:500;font-variant-numeric:tabular-nums}
+#civPill .bar{width:34px;height:5px;border-radius:3px;background:rgba(120,120,128,.18);overflow:hidden}
+#civPill .bar i{display:block;height:100%;background:var(--plant);border-radius:3px}
+#civPill.pol .bar i{background:#8d7b68}
+.era-line{display:flex;gap:6px;margin:6px 0 12px}
+.era-line div{flex:1;text-align:center;padding:8px 2px;border-radius:14px;background:rgba(120,120,128,.1);font-size:11px;line-height:1.25;color:var(--text2)}
+.era-line div b{display:block;font-size:20px;margin-bottom:2px}
+.era-line div.on{background:rgba(52,199,89,.16);color:var(--text);font-weight:600}
+.era-line div.now{outline:2px solid var(--plant)}
+.civ-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:8px 0}
+.civ-grid div{background:rgba(120,120,128,.1);border-radius:14px;padding:8px;text-align:center;font-size:12px;color:var(--text2)}
+.civ-grid b{display:block;font-size:17px;color:var(--text)}
+.links{margin:6px 0 0;padding:0;list-style:none;font-size:13.5px;line-height:1.45}
+.links li{padding:7px 0;border-top:1px solid var(--hair)}
+.links li b{font-weight:600}
+.meter{height:8px;border-radius:4px;background:rgba(120,120,128,.15);overflow:hidden;margin:4px 0 10px}
+.meter i{display:block;height:100%;border-radius:4px}
 #catBanner .bar i{display:block;height:100%;background:var(--warn);border-radius:3px}
 
 /* ---------- Fiche créature ---------- */
@@ -276,10 +295,13 @@ input[type=range]::-moz-range-thumb{width:28px;height:28px;border-radius:50%;bac
 <canvas id="c" aria-label="Monde 3D de l'écosystème"></canvas>
 
 <header id="topbar" class="glass" aria-label="Populations">
-  <div class="pop"><span class="ico plant"></span><span class="num"><b id="nPlants">0</b><small>plantes</small></span></div>
-  <div class="pop"><span class="ico herb"></span><span class="num"><b id="nHerbs">0</b><small>herbivores</small></span></div>
-  <div class="pop"><span class="ico pred"></span><span class="num"><b id="nPreds">0</b><small>prédateurs</small></span></div>
-  <div class="pop"><span class="ico scav"></span><span class="num"><b id="nScavs">0</b><small>charognards</small></span></div>
+  <div class="pop" title="Plantes"><span class="em">🌿</span><b id="nPlants">0</b></div>
+  <div class="pop" title="Herbivores"><span class="em">🐰</span><b id="nHerbs">0</b></div>
+  <div class="pop" title="Prédateurs"><span class="em">🦊</span><b id="nPreds">0</b></div>
+  <div class="pop" title="Charognards"><span class="em">🦅</span><b id="nScavs">0</b></div>
+  <div class="pop" title="Oiseaux"><span class="em">🐦</span><b id="nBirds">0</b></div>
+  <div class="pop" title="Poissons"><span class="em">🐟</span><b id="nFish">0</b></div>
+  <div class="pop" title="Humains"><span class="em">🧑</span><b id="nHums">0</b></div>
   <div class="sep"></div>
   <div id="clock"><span id="dayIcon">☀️</span><span id="simTime">0:00</span></div>
 </header>
@@ -287,6 +309,7 @@ input[type=range]::-moz-range-thumb{width:28px;height:28px;border-radius:50%;bac
   <div id="catBanner" class="glass hidden"><span id="catText"></span><span class="bar"><i id="catBar"></i></span></div>
   <button id="chalPill" class="pill glass hidden" aria-label="Défi en cours"></button>
   <div id="docPill" class="pill glass hidden"></div>
+  <button id="civPill" class="pill glass" aria-label="Civilisation"></button>
 </div>
 
 <section id="card" class="glass off" aria-live="polite">
@@ -320,6 +343,7 @@ input[type=range]::-moz-range-thumb{width:28px;height:28px;border-radius:50%;bac
         <button data-tab="pop" class="on">Populations</button>
         <button data-tab="energy">Énergie</button>
         <button data-tab="genes">Gènes</button>
+        <button data-tab="civ">Civilisation</button>
         <button data-tab="compare">Comparer</button>
       </div>
       <div class="subrow" id="chartSub"></div>
@@ -362,6 +386,7 @@ input[type=range]::-moz-range-thumb{width:28px;height:28px;border-radius:50%;bac
   <div class="action-sheet glass" role="dialog" aria-label="Plus">
     <h3>✨ Plus de fun</h3>
     <div class="tiles">
+      <button class="tile" data-more="civ"><span class="emo">🏛️</span>Civilisation</button>
       <button class="tile" data-more="chal"><span class="emo">🏆</span>Défis</button>
       <button class="tile" data-more="rec"><span class="emo">🥇</span>Records</button>
       <button class="tile" data-more="jour"><span class="emo">📰</span>Journal<span class="badge hidden" id="jourBadge"></span></button>
@@ -399,7 +424,7 @@ input[type=range]::-moz-range-thumb{width:28px;height:28px;border-radius:50%;bac
 <div id="flash"></div>
 <div id="toast" class="glass"></div>
 <div id="press"></div>
-<div id="hint" class="glass hidden">👆 <b>Touche le sol</b> : ajoute de la nourriture<br>✋ <b>Appui long</b> : ajoute un prédateur<br>🐾 <b>Touche un animal</b> : sa fiche, son nom, sa famille<br>✨ <b>Menu</b> : défis, records, journal, photo…</div>
+<div id="hint" class="glass hidden">👆 <b>Touche le sol</b> : ajoute de la nourriture<br>✋ <b>Appui long</b> : ajoute un prédateur<br>🐾 <b>Touche un animal</b> : sa fiche, son nom, sa famille<br>🏛️ <b>Touche la pastille de l’âge</b> : la civilisation et les liens entre tout<br>✨ <b>Menu</b> : défis, records, journal, photo…</div>
 <div id="loading"><div><div class="spin"></div><p id="loadMsg">Création du monde…</p></div></div>
 <script>
   // Si la 3D ne se charge pas (pas de connexion), on l'explique au lieu de rester bloqué
@@ -416,6 +441,9 @@ const SimCore = (() => {
     hCount: 45, hSpeed: 3, hVision: 7, hGain: 18, hCost: 1, hRepro: 48, hLife: 80,
     pCount: 7, pSpeed: 3.6, pVision: 10, pGain: 39, pCost: 1, pRepro: 74, pLife: 120,
     sCount: 8, sSpeed: 2.8, sVision: 12, sGain: 30, sCost: 1, sRepro: 55, sLife: 100,
+    bCount: 12, bSpeed: 4, bVision: 14, bGain: 20, bCost: 1, bRepro: 40, bLife: 110,
+    uCount: 6, uSpeed: 2.6, uVision: 12, uGain: 30, uCost: 1, uRepro: 50, uLife: 200,
+    fishCount: 20, fishMax: 40, techSpeed: 1, respect: 0.6,
     mutRate: 0.3, mutStrength: 0.1,
     worldSize: 26, simSpeed: 1, maxCreatures: 300, dayNight: true, dayLength: 120, respawn: true, events: true,
   });
@@ -427,30 +455,49 @@ const SimCore = (() => {
     { id: 'chasse', name: 'Chasse intense', values: { pCount: 18, pSpeed: 4.4, pVision: 14, pGain: 55, hCount: 70, plantGrowth: 1.4 } },
   ];
 
-  // 0 = herbivore, 1 = prédateur, 2 = charognard
+  // 0 = herbivore, 1 = prédateur, 2 = charognard, 3 = oiseau, 4 = humain
   const SPECIES = [
     { name: 'Herbivore', speed: 'hSpeed', vision: 'hVision', gain: 'hGain', cost: 'hCost', repro: 'hRepro', life: 'hLife', count: 'hCount', maturity: 10, radius: 0.42, reproCD: 5 },
     { name: 'Prédateur', speed: 'pSpeed', vision: 'pVision', gain: 'pGain', cost: 'pCost', repro: 'pRepro', life: 'pLife', count: 'pCount', maturity: 15, radius: 0.5, reproCD: 18 },
     { name: 'Charognard', speed: 'sSpeed', vision: 'sVision', gain: 'sGain', cost: 'sCost', repro: 'sRepro', life: 'sLife', count: 'sCount', maturity: 12, radius: 0.4, reproCD: 8 },
+    { name: 'Oiseau', speed: 'bSpeed', vision: 'bVision', gain: 'bGain', cost: 'bCost', repro: 'bRepro', life: 'bLife', count: 'bCount', maturity: 10, radius: 0.25, reproCD: 10 },
+    { name: 'Humain', speed: 'uSpeed', vision: 'uVision', gain: 'uGain', cost: 'uCost', repro: 'uRepro', life: 'uLife', count: 'uCount', maturity: 20, radius: 0.35, reproCD: 25 },
   ];
   const GENE_KEYS = ['speed', 'vision', 'size'];
   // Les gènes sont des facteurs (1 = valeur de départ du curseur)
   const GENE_LIM = { speed: [0.3, 3], vision: [0.3, 3], size: [0.45, 2.5] };
-  const COST = { basal: [0.32, 0.49, 0.3], muscle: 0.05, vision: 0.12, move: 0.55, refSpeed: 3, refVision: 8, maxE: [1.3, 1.15, 1.3] };
+  const COST = { basal: [0.32, 0.49, 0.3, 0.2, 0.2], muscle: 0.05, vision: 0.12, move: 0.55, refSpeed: 3, refVision: 8, maxE: [1.3, 1.15, 1.3, 1.3, 1.4] };
   const PLANT = { grow: 0.075, rate: 20, life: 120 };
   // Constantes de comportement (ajustées pour un écosystème stable)
   const TUNE = { eatTime: 1.2, digest: 2.9, giveUp: 4, rest: 2, killBase: 0.53, wander: 0.4, seekFrac: 0.7, share: 0.45, stealth: 0.4, sprintRange: 4.5, sprint: 1.25, stalk: 0.55,
     territory: 10, crowd: 1, herdRadius: 4.5, herdCrowd: 3, huntRate: 0.5, huntK: 6.3, edible: 0.35,
-    scavRadius: 6, scavCrowd: 3, scavBite: 0.6, carcDecay: 0.25, rareRate: 1 / 250 };
+    scavRadius: 6, scavCrowd: 3, scavBite: 0.6, carcDecay: 0.25, rareRate: 1 / 250, birdMax: 40, humanMax: 30, birdSeed: 0.3, treeFood: 0.03 };
   const CAT_DURATION = { drought: 30, epidemic: 25, rain: 25, winter: 40 };
   const RARE = ['gold', 'glow', 'giant'];
-  const CAUSES = ['starve', 'old', 'eaten', 'sick', 'comet', 'left'];
+  const CAUSES = ['starve', 'old', 'eaten', 'sick', 'comet', 'left', 'hunted'];
   // Syllabes pour donner un petit nom à chaque animal
   const NAMES = [
     [['Pom', 'Nou', 'Mi', 'Flo', 'Bou', 'Li', 'Pa', 'Cho', 'Ti', 'Ma', 'Ze', 'Lou', 'Ca', 'Pi', 'Ro', 'Sa', 'Pru', 'Ny'], ['pon', 'nette', 'nou', 'chou', 'lie', 'fy', 'ki', 'mi', 'bulle', 'line', 'ton', 'do', 'zou', 'pin']],
     [['Kra', 'Gro', 'Zar', 'Rok', 'Vex', 'Dra', 'Sha', 'Gri', 'Kor', 'Ruk', 'Fal', 'Bri', 'Sko', 'Vul', 'Tor', 'Zeph'], ['k', 'x', 'gor', 'zak', 'dax', 'rik', 'os', 'ko', 'ryn', 'tor', 'fang', 'ion']],
     [['Cor', 'Bec', 'Gri', 'Nor', 'Pla', 'Cro', 'Sor', 'Bru', 'Vau', 'Fu', 'Mor', 'Gal'], ['bac', 'vin', 'lou', 'bis', 'croc', 'mine', 'tour', 'chet', 'gaud', 'beau', 'zin']],
+    [['Pio', 'Cui', 'Tri', 'Zi', 'Fli', 'Plu', 'Chi', 'Lu', 'Pé', 'Ro', 'Twi', 'Mé'], ['pi', 'li', 'lou', 'net', 'rit', 'vio', 'tou', 'zou', 'sette', 'lin']],
   ];
+  const HUMAN_NAMES = ['Ana', 'Léo', 'Mia', 'Tom', 'Zoé', 'Hugo', 'Lina', 'Noé', 'Inès', 'Malo', 'Jade', 'Sami', 'Lou', 'Nina', 'Rafi', 'Ilan', 'Maya', 'Eliot', 'Sasha', 'Yuna', 'Timéo', 'Alba', 'Kenzo', 'Lya', 'Oscar', 'Romy', 'Nael', 'Iris', 'Aaron', 'Elsa'];
+  // Les humains passent d'un âge à l'autre en accumulant du savoir
+  const ERA = [
+    { name: 'Âge des cavernes', emo: '🪨', need: 0, txt: 'Ils vivent dans une grotte, cueillent et chassent.' },
+    { name: 'Âge agricole', emo: '🌾', need: 25, txt: 'Ils cultivent des champs et construisent des huttes.' },
+    { name: 'Âge des villages', emo: '🏘️', need: 70, txt: 'Maisons, bateau de pêche : la population grandit.' },
+    { name: 'Âge industriel', emo: '🏭', need: 150, txt: 'Les usines accélèrent le progrès… mais polluent.' },
+    { name: 'Âge écologique', emo: '🌱', need: 320, txt: 'Énergie solaire : la pollution disparaît peu à peu.' },
+  ];
+  const BUILD = {
+    cave: { cap: 8, name: 'Grotte' }, hut: { cap: 4, cost: 6, name: 'Hutte' }, house: { cap: 6, cost: 10, name: 'Maison' },
+    farm: { cost: 2, name: 'Champ' }, boat: { cost: 8, name: 'Bateau' }, factory: { cost: 14, name: 'Usine' }, solar: { cost: 8, name: 'Panneaux solaires' },
+  };
+  const FARM_R = 2.2, WATER_BASE = -0.55;
+  const lakeOf = R => ({ x: 0.36 * R, z: -0.3 * R, r: 0.24 * R });
+  const villageOf = R => ({ x: -0.45 * R, z: 0.35 * R });
 
   function mulberry32(a) {
     return function () {
@@ -468,7 +515,16 @@ const SimCore = (() => {
     const n = 0.55 * Math.sin(0.21 * x + 1.3) * Math.cos(0.17 * z - 0.4)
             + 0.30 * Math.sin(0.37 * x - 0.33 * z + 2.1)
             + 0.18 * Math.cos(0.53 * z + 0.47 * x + 0.7);
-    return 0.9 * (1 - u * u) + 1.3 * n * (1 - smoothstep(0.7, 1, u));
+    let h = 0.9 * (1 - u * u) + 1.3 * n * (1 - smoothstep(0.7, 1, u));
+    // Le lac : une cuvette aux bords irréguliers
+    const L = lakeOf(R), lx = x - L.x, lz = z - L.z;
+    let d = Math.sqrt(lx * lx + lz * lz) / L.r;
+    if (d < 1.6) {
+      const th = Math.atan2(lz, lx); d *= 1 + 0.1 * Math.sin(3 * th + 0.5) + 0.06 * Math.sin(5 * th + 2);
+      const w = 1 - smoothstep(0.75, 1.45, d);
+      h = h * (1 - w) + (-2.3 + 1.9 * Math.min(d, 1.4) ** 2) * w;
+    }
+    return h;
   }
 
   class Grid {
@@ -509,16 +565,54 @@ const SimCore = (() => {
     const P = Object.assign({}, DEFAULTS, initParams);
     let rng = mulberry32(seed >>> 0);
     const gauss = () => { let u = 0; while (u === 0) u = rng(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(6.283185307 * rng()); };
-    const gPlants = new Grid(4), gHerb = new Grid(5), gPred = new Grid(5), gScav = new Grid(6), gCarc = new Grid(6);
-    const grids = [gHerb, gPred, gScav];
+    const gPlants = new Grid(4), gHerb = new Grid(5), gPred = new Grid(5), gScav = new Grid(6), gCarc = new Grid(6), gBird = new Grid(6), gHum = new Grid(5), gFish = new Grid(4);
+    const grids = [gHerb, gPred, gScav, gBird, gHum];
+    const NSP = 5;
     const tmp = [], tmpParents = [];
     const ctx = { alive: 0, nPlants: 0, heat: 1, R: P.worldSize };
 
     const sim = {
-      params: P, seed: seed >>> 0, t: 0, plants: [], creatures: [[], [], []], carcasses: [], events: [], nextId: 1,
-      cat: null, comet: null, alpha: null, extinctT: [0, 0, 0], lastAlive: [0, 0, 0], maxGen: [0, 0, 0],
-      nextEventT: 0, reg: new Map(), totals: null,
+      params: P, seed: seed >>> 0, t: 0, plants: [], creatures: [[], [], [], [], []], carcasses: [], events: [], nextId: 1,
+      cat: null, comet: null, alpha: null, extinctT: [0, 0, 0, 0, 0], lastAlive: [0, 0, 0, 0, 0], maxGen: [0, 0, 0, 0, 0],
+      nextEventT: 0, reg: new Map(), totals: null, fish: [], water: 1, tribe: null, fishExtT: 0,
     };
+
+    /* ---------- Relief en cache + eau ---------- */
+    const HC = 0.4; let hCache = null, hCols = 0, hOff = 0;
+    function buildHeightCache() {
+      const R = P.worldSize; hOff = R + 1; hCols = Math.ceil(2 * hOff / HC) + 2;
+      hCache = new Float32Array(hCols * hCols);
+      for (let j = 0; j < hCols; j++) for (let i = 0; i < hCols; i++) hCache[j * hCols + i] = heightAt(i * HC - hOff, j * HC - hOff, R);
+    }
+    function hAt(x, z) {
+      const fx = (x + hOff) / HC, fz = (z + hOff) / HC;
+      let i = Math.floor(fx), j = Math.floor(fz);
+      if (i < 0 || j < 0 || i >= hCols - 1 || j >= hCols - 1) return 0;
+      const u = fx - i, v = fz - j, a = hCache[j * hCols + i], b = hCache[j * hCols + i + 1], c = hCache[(j + 1) * hCols + i], d = hCache[(j + 1) * hCols + i + 1];
+      return (a * (1 - u) + b * u) * (1 - v) + (c * (1 - u) + d * u) * v;
+    }
+    const waterY = () => WATER_BASE + (sim.water - 1) * 0.9;
+    sim.waterY = waterY;
+    sim.lake = () => lakeOf(P.worldSize);
+    // Profondeur d'eau en (x, z) (≤ 0 = terre ferme)
+    function depth(x, z) {
+      const L = lakeOf(ctx.R), dx = x - L.x, dz = z - L.z;
+      if (dx * dx + dz * dz > L.r * L.r * 2.6) return -1;
+      return waterY() - hAt(x, z);
+    }
+    sim.depth = depth;
+    const inWater = (x, z, m = 0) => depth(x, z) > m;
+    // Distance relative au lac (1 = bord moyen) → les plantes poussent mieux près de l'eau
+    function nearWater(x, z) { const L = lakeOf(ctx.R); return 1 - smoothstep(1.0, 2.1, Math.hypot(x - L.x, z - L.z) / L.r); }
+    function randLand(rMax) {
+      for (let i = 0; i < 20; i++) { const [x, z] = randInDisc(rMax); if (!inWater(x, z, -0.15) && !nearBuilding(x, z, 0)) return [x, z]; }
+      return [0, 0];
+    }
+    function nearBuilding(x, z, pad) {
+      const T = sim.tribe; if (!T) return null;
+      for (const b of T.buildings) { if (b.dead || b.type === 'boat') continue; const r = b.size + pad; if ((b.x - x) ** 2 + (b.z - z) ** 2 < r * r) return b; }
+      return null;
+    }
 
     const clampG = (k, v) => Math.min(GENE_LIM[k][1], Math.max(GENE_LIM[k][0], v));
     const baseGenes = () => ({ speed: clampG('speed', 1 + gauss() * 0.06), vision: clampG('vision', 1 + gauss() * 0.06), size: clampG('size', 1 + gauss() * 0.06) });
@@ -536,11 +630,11 @@ const SimCore = (() => {
     }
     function randInDisc(rMax) { const a = rng() * 6.283185307, r = Math.sqrt(rng()) * rMax; return [Math.cos(a) * r, Math.sin(a) * r]; }
     function clampDisc(o, lim) { const r = Math.hypot(o.x, o.z); if (r > lim) { o.x *= lim / r; o.z *= lim / r; } }
-    const makeName = sp => { const [a, b] = NAMES[sp]; return a[(rng() * a.length) | 0] + b[(rng() * b.length) | 0]; };
+    const makeName = sp => { if (sp === 4) return HUMAN_NAMES[(rng() * HUMAN_NAMES.length) | 0]; const [a, b] = NAMES[sp]; return a[(rng() * a.length) | 0] + b[(rng() * b.length) | 0]; };
 
-    // type : 0 = arbre, 1 = buisson, 2 = baies (nourriture ajoutée au doigt)
+    // type : 0 = arbre, 1 = buisson, 2 = baies (nourriture ajoutée au doigt), 3 = blé (champ des humains)
     function newPlant(x, z, growth, type) {
-      const p = { id: sim.nextId++, x, z, growth, age: 0, lifeF: 0.75 + rng() * 0.5, type, rot: rng() * 6.283, eater: null, dead: false, dyingT: 0, cause: null, born: sim.t };
+      const p = { id: sim.nextId++, x, z, growth, age: 0, lifeF: 0.75 + rng() * 0.5, type, rot: rng() * 6.283, eater: null, dead: false, dyingT: 0, cause: null, born: sim.t, wet: nearWater(x, z), fruit: 0, nb: 0 };
       sim.plants.push(p);
       return p;
     }
@@ -551,6 +645,8 @@ const SimCore = (() => {
         fx: 0, fz: 0, sprint: false, hunter: null, infected: 0, immune: false, dead: false, dyingT: 0, cause: null, born: sim.t,
         name: makeName(sp), rare: null, parent,
       };
+      if (sp === 3) { c.fly = 1; c.home = null; c.perch = null; c.alt = 0; }
+      if (sp === 4) { c.job = null; c.goal = null; c.load = 0; c.loadType = null; c.home = null; }
       // Registre généalogique : survit à la mort de l'animal
       c.rec = { id: c.id, sp, name: c.name, gen, parent, born: sim.t, died: null, cause: null, kids: [], rare: null };
       sim.reg.set(c.id, c.rec);
@@ -563,6 +659,7 @@ const SimCore = (() => {
     }
     function killPlant(p, cause) {
       p.dead = true; p.dyingT = 0.6; p.cause = cause; p.eater = null;
+      if (p.farm) { p.farm.crops--; p.farm = null; }
       sim.events.push({ type: 'plantDeath', cause, x: p.x, z: p.z, ptype: p.type });
     }
     function killCreature(c, cause) {
@@ -573,8 +670,9 @@ const SimCore = (() => {
       ctx.alive--;
       sim.totals.deaths[cause][c.sp]++;
       if (c.alpha) { sim.alpha = null; sim.events.push({ type: 'alphaLeave', x: c.x, z: c.z, id: c.id, cause }); if (cause === 'left') return; }
-      // Une charogne reste sur place : de quoi nourrir les charognards
-      const food = [28, 40, 22][c.sp] * c.genes.size * (cause === 'eaten' ? 0.35 : 1);
+      if (c.sp === 3 && c.target && c.target.fish) c.target.diver = null;
+      // Une charogne reste sur place : de quoi nourrir les charognards (les humains, eux, sont enterrés)
+      const food = [28, 40, 22, 6, 0][c.sp] * c.genes.size * (cause === 'eaten' || cause === 'hunted' ? 0.35 : 1);
       if (food > 2) sim.carcasses.push({ id: sim.nextId++, x: c.x, z: c.z, sp: c.sp, size: c.genes.size, food, max: food, age: 0, dead: false, dyingT: 0 });
       sim.events.push({ type: 'death', sp: c.sp, cause, x: c.x, z: c.z, id: c.id, size: c.genes.size, name: c.name });
     }
@@ -591,27 +689,169 @@ const SimCore = (() => {
       sim.t = 0; sim.plants.length = 0; sim.carcasses.length = 0;
       for (const arr of sim.creatures) arr.length = 0;
       sim.events.length = 0; sim.cat = null; sim.comet = null; sim.alpha = null;
-      sim.extinctT = [0, 0, 0]; sim.maxGen = [0, 0, 0]; sim.reg.clear();
+      sim.extinctT = [0, 0, 0, 0, 0]; sim.maxGen = [0, 0, 0, 0, 0]; sim.reg.clear();
       sim.nextEventT = 80 + rng() * 60;
-      sim.totals = { births: [0, 0, 0], deaths: Object.fromEntries(CAUSES.map(k => [k, [0, 0, 0]])) };
-      const R = P.worldSize;
+      sim.totals = { births: [0, 0, 0, 0, 0], deaths: Object.fromEntries(CAUSES.map(k => [k, [0, 0, 0, 0, 0]])) };
+      const R = P.worldSize; ctx.R = R;
+      buildHeightCache();
+      sim.water = 1; sim.fish.length = 0; sim.fishExtT = 0;
+      sim.tribe = null; newTribe();
       const nP = Math.round(P.plantMax * 0.6);
       for (let i = 0; i < nP; i++) {
-        const [x, z] = randInDisc(R - 1.2);
+        const [x, z] = randLand(R - 1.2);
         const p = newPlant(x, z, 0.3 + rng() * 0.7, rng() < 0.4 ? 0 : 1);
-        p.age = rng() * PLANT.life * 0.7;
+        p.age = rng() * PLANT.life * 0.7; p.fruit = rng();
       }
-      for (let sp = 0; sp < 3; sp++) {
+      for (let sp = 0; sp < NSP; sp++) {
         const S = SPECIES[sp];
         for (let i = 0; i < P[S.count]; i++) {
-          const [x, z] = randInDisc(R * 0.88);
+          let [x, z] = randLand(R * 0.88);
+          if (sp === 4) { const T = sim.tribe; x = T.x + gauss() * 1.5; z = T.z + gauss() * 1.5; }
           const c = newCreature(sp, x, z, baseGenes(), P[S.repro] * (0.35 + rng() * 0.25), 0);
           c.age = S.maturity * 0.5 + rng() * P[S.life] * 0.35;
+          if (sp === 4) { c.energy = P[S.repro] * 0.8; c.age = S.maturity * 0.7 + rng() * P[S.life] * 0.3; }
         }
       }
-      ctx.alive = sim.creatures[0].length + sim.creatures[1].length + sim.creatures[2].length;
+      for (let i = 0; i < P.fishCount; i++) spawnFish();
+      ctx.alive = 0; for (const a of sim.creatures) ctx.alive += a.length;
       sim.lastAlive = sim.creatures.map(a => a.length);
     };
+
+    /* ---------- Poissons ---------- */
+    function spawnFish(x0, z0) {
+      const L = lakeOf(ctx.R);
+      for (let i = 0; i < 20; i++) {
+        const a = rng() * 6.283, r = Math.sqrt(rng()) * L.r * 0.9;
+        const x = x0 != null ? x0 + gauss() * 0.6 : L.x + Math.cos(a) * r, z = z0 != null ? z0 + gauss() * 0.6 : L.z + Math.sin(a) * r;
+        if (depth(x, z) > 0.25) { const f = { id: sim.nextId++, fish: true, x, z, a: rng() * 6.283, age: 0, life: 60 + rng() * 40, size: 0.8 + rng() * 0.4, dead: false, dyingT: 0, diver: null, cause: null }; sim.fish.push(f); return f; }
+      }
+      return null;
+    }
+    function fishCap() { const T = sim.tribe; return P.fishMax * Math.min(1.3, sim.water) ** 2 * (1 - 0.85 * (T ? T.pol : 0)); }
+    function killFish(f, cause) { f.dead = true; f.dyingT = 0.5; f.cause = cause; if (f.diver) f.diver = null; sim.events.push({ type: 'fishDeath', cause, x: f.x, z: f.z }); }
+    function updateFish(dt) {
+      let n = 0; for (const f of sim.fish) if (!f.dead) n++;
+      const K = fishCap();
+      for (const f of sim.fish) {
+        if (f.dead) { f.dyingT -= dt; continue; }
+        f.age += dt;
+        if (depth(f.x, f.z) < 0.05) { killFish(f, 'dry'); n--; continue; }
+        if (f.age > f.life || (n > K && rng() < 0.06 * (n / Math.max(0.5, K) - 1) * dt)) { killFish(f, f.age > f.life ? 'old' : 'pol'); n--; continue; }
+        f.a += (rng() - 0.5) * 3 * dt;
+        const sp = 0.9 * (f.diver ? 1.8 : 1), nx = f.x + Math.cos(f.a) * sp * dt, nz = f.z + Math.sin(f.a) * sp * dt;
+        if (depth(nx, nz) < 0.25) { const L = lakeOf(ctx.R); f.a = Math.atan2(L.z - f.z, L.x - f.x) + (rng() - 0.5) * 1.5; }
+        else { f.x = nx; f.z = nz; }
+        if (n < K && rng() < 0.08 * (1 - n / K) * dt) { if (spawnFish(f.x, f.z)) n++; }
+      }
+      if (n === 0 && P.respawn && P.fishCount > 0 && sim.water > 0.5) {
+        sim.fishExtT += dt;
+        if (sim.fishExtT > 20) { sim.fishExtT = 0; for (let i = 0; i < 5; i++) spawnFish(); sim.events.push({ type: 'immigrate', sp: 'fish' }); }
+      } else sim.fishExtT = 0;
+      sim.nFish = n;
+    }
+
+    /* ---------- La tribu humaine ---------- */
+    function newTribe() {
+      const R = P.worldSize, v = villageOf(R), d = Math.hypot(v.x, v.z);
+      sim.tribe = { x: v.x, z: v.z, era: 0, know: 0, food: 30, wood: 6, pol: 0, buildings: [], planT: 0, maxPol: 0, extT: 0, foodRate: 0 };
+      const cave = addBuilding('cave', v.x + v.x / d * 3, v.z + v.z / d * 3);
+      cave.prog = 1;
+    }
+    const BRATE = { cave: 1, hut: 0.15, house: 0.1, farm: 0.3, boat: 0.15, factory: 0.06, solar: 0.2 };
+    const BSIZE = { cave: 2, hut: 1.2, house: 1.5, farm: FARM_R + 0.3, boat: 0.8, factory: 1.8, solar: 1.4 };
+    function addBuilding(type, x, z) {
+      const b = { id: sim.nextId++, type, x, z, size: BSIZE[type], prog: 0, dead: false, rot: rng() * 6.283, crops: 0 };
+      if (type === 'boat') {
+        // Le ponton (point d'accès) est sur la rive
+        const L = lakeOf(ctx.R), a = Math.atan2(z - L.z, x - L.x);
+        for (let k = 1.0; k < 2; k += 0.05) { b.sx = L.x + Math.cos(a) * L.r * k; b.sz = L.z + Math.sin(a) * L.r * k; if (!inWater(b.sx, b.sz, -0.15)) break; }
+      }
+      sim.tribe.buildings.push(b);
+      // On dégage le terrain
+      if (type !== 'boat') for (const p of sim.plants) if (!p.dead && (p.x - x) ** 2 + (p.z - z) ** 2 < (b.size + 0.4) ** 2) killPlant(p, 'cut');
+      return b;
+    }
+    function findSite(size) {
+      const T = sim.tribe, R = ctx.R;
+      for (let i = 0; i < 40; i++) {
+        const a = rng() * 6.283, d = 3 + rng() * (3 + T.buildings.length * 0.7);
+        const x = T.x + Math.cos(a) * d, z = T.z + Math.sin(a) * d;
+        if (x * x + z * z > (R - 2.2 - size) ** 2) continue;
+        if (inWater(x, z, -0.3) || inWater(x + size, z, -0.3) || inWater(x - size, z, -0.3) || inWater(x, z + size, -0.3) || inWater(x, z - size, -0.3)) continue;
+        if (nearBuilding(x, z, size + 0.3) || Math.hypot(x - T.x, z - T.z) < size + 1.2) continue;
+        return [x, z];
+      }
+      return null;
+    }
+    const housing = () => { let n = 0; for (const b of sim.tribe.buildings) if (!b.dead && b.prog >= 1) n += BUILD[b.type].cap || 0; return n; };
+    const countB = type => { let n = 0; for (const b of sim.tribe.buildings) if (!b.dead && b.type === type) n++; return n; };
+    sim.housing = housing; sim.countB = countB;
+    function planTribe(pop) {
+      const T = sim.tribe;
+      if (!pop) return;
+      if (T.buildings.some(b => !b.dead && b.prog < 1 && b.type !== 'farm')) return;
+      const cap = housing(), dwelling = T.era >= 2 ? 'house' : 'hut';
+      let want = null;
+      if (T.era >= 1 && pop >= cap - 1 && cap < TUNE.humanMax + 4 && T.wood >= BUILD[dwelling].cost) want = dwelling;
+      else if (T.era >= 1 && countB('farm') < Math.min(5, 1 + Math.floor(pop / 5)) && T.wood >= BUILD.farm.cost) want = 'farm';
+      else if (T.era >= 2 && countB('boat') < 1 && T.wood >= BUILD.boat.cost) want = 'boat';
+      else if (T.era === 3 && countB('factory') < Math.min(3, 1 + Math.floor(pop / 10)) && T.wood >= BUILD.factory.cost) want = 'factory';
+      if (!want) return;
+      let pos;
+      if (want === 'boat') {
+        // Le bateau se met à l'eau sur la rive la plus proche du village
+        const L = lakeOf(ctx.R), a = Math.atan2(T.z - L.z, T.x - L.x);
+        pos = [L.x + Math.cos(a) * L.r * 0.75, L.z + Math.sin(a) * L.r * 0.75];
+      } else pos = findSite(BSIZE[want]);
+      if (!pos) return;
+      T.wood -= BUILD[want].cost;
+      addBuilding(want, pos[0], pos[1]);
+      sim.events.push({ type: 'build', what: want, x: pos[0], z: pos[1] });
+    }
+    function tribeStep(dt, pop) {
+      const T = sim.tribe;
+      // Le savoir s'accumule : plus la tribu est nombreuse et bien nourrie, plus elle progresse
+      const fac = countB('factory');
+      T.know += dt * 0.05 * Math.pow(pop, 0.8) * P.techSpeed * (T.food > 2 ? 1 : 0.4) * (1 + 0.7 * fac);
+      const nx = ERA[T.era + 1];
+      if (nx && T.know >= nx.need && (T.era + 1 < 4 || P.respect >= 0.5)) {
+        T.era++;
+        sim.events.push({ type: 'era', era: T.era, x: T.x, z: T.z });
+        if (T.era === 4) {
+          // Âge écologique : les usines deviennent des panneaux solaires
+          for (const b of T.buildings) if (!b.dead && b.type === 'factory') { b.type = 'solar'; b.size = BSIZE.solar; b.prog = 1; }
+        }
+      }
+      // Pollution : les usines polluent, les arbres et le solaire nettoient
+      const solar = countB('solar');
+      let nTrees = 0; for (const p of sim.plants) if (!p.dead && p.type === 0 && p.growth > 0.5) nTrees++;
+      T.nTrees = nTrees;
+      T.pol += dt * (0.005 * fac - 0.002 - 0.00002 * nTrees - 0.003 * solar);
+      T.pol = Math.min(1, Math.max(0, T.pol));
+      if (T.pol > T.maxPol + 0.1) { T.maxPol = T.pol; if (T.pol > 0.45) sim.events.push({ type: 'smog', pol: T.pol }); }
+      if (T.pol < T.maxPol - 0.3) T.maxPol = T.pol;
+      // Le bois chauffe la tribu en hiver
+      if (sim.cat && sim.cat.type === 'winter') T.wood = Math.max(0, T.wood - pop * 0.02 * dt);
+      // Les champs se ressèment tout seuls
+      for (const b of T.buildings) {
+        if (b.dead) continue;
+        if (b.type === 'farm' && b.prog >= 1 && b.crops < 7 && rng() < 0.6 * dt) {
+          const a = rng() * 6.283, r = Math.sqrt(rng()) * FARM_R;
+          const p = newPlant(b.x + Math.cos(a) * r, b.z + Math.sin(a) * r, 0.05, 3); p.farm = b; b.crops++;
+        }
+      }
+      T.planT -= dt;
+      if (T.planT <= 0) { T.planT = 1.5; planTribe(pop); }
+      // Plus d'humains : de nouveaux arrivent (le savoir est en partie conservé)
+      if (pop === 0 && P.respawn && P.uCount > 0) {
+        T.extT += dt;
+        if (T.extT > 25) {
+          T.extT = 0; T.know *= 0.6; T.food = Math.max(T.food, 20);
+          for (let i = 0; i < 4; i++) { const c = newCreature(4, T.x + gauss(), T.z + gauss(), baseGenes(), P.uRepro * 0.8, 0); c.age = SPECIES[4].maturity; ctx.alive++; }
+          sim.events.push({ type: 'immigrate', sp: 4 });
+        }
+      } else T.extT = 0;
+    }
 
     function scare(c, dx, dz, t) {
       if (c.target && c.target.eater === c) c.target.eater = null;
@@ -633,6 +873,14 @@ const SimCore = (() => {
         if (d2 > (p.sprint ? v2 : v2 * TUNE.stealth)) continue;
         const w = 1 / (d2 + 0.25);
         fx += dx * w; fz += dz * w; threat = true;
+      }
+      // Les chasseurs humains font fuir les herbivores
+      const hum = gHum.query(c.x, c.z, vision * 0.6, tmp);
+      for (let i = 0; i < hum.length; i++) {
+        const u = hum[i];
+        if (u.dead || u.state !== 'hunt') continue;
+        const dx = c.x - u.x, dz = c.z - u.z, d2 = dx * dx + dz * dz;
+        fx += dx / (d2 + 0.25); fz += dz / (d2 + 0.25); threat = true;
       }
       if (threat) { scare(c, fx, fz); return; }
       if (c.state === 'flee') c.state = 'wander';
@@ -660,7 +908,15 @@ const SimCore = (() => {
       const near = gHerb.query(c.x, c.z, vision, tmp), v2 = vision * vision;
       let n = 0;
       for (let i = 0; i < near.length; i++) { const q = near[i], dx = q.x - c.x, dz = q.z - c.z; if (dx * dx + dz * dz < v2 && free(q)) n++; }
-      if (!n) return;
+      if (!n) {
+        // Faute d'herbivores, un prédateur affamé peut s'en prendre à un humain isolé (avant l'âge des villages)
+        const T = sim.tribe;
+        if (T.era <= 1 && c.energy < P.pRepro * 0.5 && rng() < 0.05) {
+          const u = gHum.nearest(c.x, c.z, vision * 0.7, q => !q.dead && Math.hypot(q.x - T.x, q.z - T.z) > 7 && q.state !== 'sleep');
+          if (u) { c.state = 'hunt'; c.target = u; }
+        }
+        return;
+      }
       // Chasse opportuniste : plus il voit de proies, plus il se lance vite (les proies rares sont épargnées)
       const hunger = 1 + Math.max(0, 1 - c.energy / P[SPECIES[1].repro]);
       if (rng() > TUNE.huntRate * hunger * 0.16 * (n * n) / (n * n + TUNE.huntK * TUNE.huntK)) return;
@@ -687,7 +943,7 @@ const SimCore = (() => {
     }
 
     function spread(c, grid) {
-      if (!sim.cat || sim.cat.type !== 'epidemic') return;
+      if (!sim.cat || sim.cat.type !== 'epidemic' || !grid) return;
       const near = grid.query(c.x, c.z, 1.6, tmp);
       for (let i = 0; i < near.length; i++) {
         const o = near[i];
@@ -703,7 +959,7 @@ const SimCore = (() => {
       if (rng() < pWin) {
         killCreature(h, 'eaten');
         c.kills++;
-        if (!c.alpha) c.energy = Math.min(maxE, c.energy + P.pGain * h.genes.size);
+        if (!c.alpha) c.energy = Math.min(maxE, c.energy + P.pGain * h.genes.size * (h.sp === 4 ? 0.6 : 1));
         c.state = 'digest'; c.timer = c.alpha ? 10 : TUNE.digest; c.target = null;
         sim.events.push({ type: 'kill', x: h.x, z: h.z, id: c.id, prey: h.sp });
       } else {
@@ -736,6 +992,8 @@ const SimCore = (() => {
 
     // Densité locale : territoire pour les prédateurs, surpopulation pour les herbivores et charognards
     function crowded(c) {
+      if (c.sp === 3) return !c.home || c.home.dead || c.home.nb >= 3 || sim.lastAlive[3] >= TUNE.birdMax;
+      if (c.sp === 4) return sim.lastAlive[4] >= Math.min(housing(), TUNE.humanMax);
       const rad = [TUNE.herdRadius, TUNE.territory, TUNE.scavRadius][c.sp], max = [TUNE.herdCrowd, TUNE.crowd, TUNE.scavCrowd][c.sp];
       const near = grids[c.sp].query(c.x, c.z, rad, tmp), r2 = rad * rad;
       let n = 0;
@@ -755,6 +1013,8 @@ const SimCore = (() => {
       const a = rng() * 6.283;
       const ch = newCreature(c.sp, c.x + Math.cos(a) * 0.7, c.z + Math.sin(a) * 0.7, mutateGenes(c.genes), share, c.gen + 1, c.id);
       clampDisc(ch, ctx.R - 0.6);
+      if (c.sp === 3) { ch.home = ch.perch = c.home; ch.x = c.home.x; ch.z = c.home.z; ch.fly = 0; ch.state = 'perch'; }
+      if (c.sp === 4) { ch.state = 'sleep'; ch.home = c.home; }
       c.rec.kids.push(ch.id);
       // Mutations rares : doré (vit plus longtemps), lumineux (brille la nuit), géant
       let rare = null, inherited = false;
@@ -774,9 +1034,63 @@ const SimCore = (() => {
       }
       sim.events.push({ type: 'birth', sp: c.sp, x: ch.x, z: ch.z, id: ch.id, parent: c.id, name: ch.name });
       pruneRegistry();
+      return ch;
+    }
+
+    function move(c, dx, dz, spd, dt) {
+      const R = ctx.R;
+    // Évite le bord du terrain
+    const r = Math.hypot(c.x, c.z), edge = R - 2.5;
+    if (r > edge && spd > 0) {
+      const w = (r - edge) / 2.5 * 2, l = Math.hypot(dx, dz) || 1;
+      dx = dx / l - (c.x / r) * w; dz = dz / l - (c.z / r) * w;
+      if (c.state === 'wander') c.wa = Math.atan2(dz, dx);
+    }
+    let tx = 0, tz = 0;
+    const l = Math.hypot(dx, dz);
+    if (l > 1e-6 && spd > 0) { tx = dx / l * spd; tz = dz / l * spd; }
+    const k = 1 - Math.exp(-6 * dt);
+    c.vx += (tx - c.vx) * k; c.vz += (tz - c.vz) * k;
+    c.x += c.vx * dt; c.z += c.vz * dt;
+    const r2 = Math.hypot(c.x, c.z), lim = R - 0.6;
+    if (r2 > lim) {
+      c.x *= lim / r2; c.z *= lim / r2;
+      const nx = c.x / lim, nz = c.z / lim, vn = c.vx * nx + c.vz * nz;
+      if (vn > 0) { c.vx -= vn * nx; c.vz -= vn * nz; }
+    }
+      // Les animaux terrestres contournent le lac
+      if (c.sp !== 3) {
+        const d = depth(c.x, c.z);
+        if (d > -0.05) {
+          const L = lakeOf(R), lx = c.x - L.x, lz = c.z - L.z, ll = Math.hypot(lx, lz) || 1, nx = lx / ll, nz = lz / ll;
+          const vn = c.vx * nx + c.vz * nz;
+          if (vn < 0) { c.vx -= vn * nx; c.vz -= vn * nz; }
+          const push = d > 0.15 ? 0.12 : 0.04;
+          c.x += nx * push + c.vx * 0.0; c.z += nz * push;
+          if (c.state === 'wander') c.wa = Math.atan2(nz, nx) + (rng() - 0.5) * 2;
+        }
+      }
+    }
+
+    // Énergie dépensée : métabolisme (taille), muscles, vision, et mouvement (vitesse²). Renvoie false si l'animal meurt.
+    function metab(c, dt, vision, mul) {
+      const S = SPECIES[c.sp], g = c.genes, v = Math.hypot(c.vx, c.vz) * (c.sp === 3 ? 0.5 : 1), sz = g.size;
+      let cost = COST.basal[c.sp] * Math.pow(sz, 1.25) + COST.muscle * g.speed * g.speed + COST.vision * vision / COST.refVision + COST.move * sz * (v / COST.refSpeed) ** 2;
+      cost *= P[S.cost] * ctx.heat * mul * (1 + 0.3 * sim.tribe.pol);
+      if (c.infected > 0) {
+        c.infected -= dt; cost += 1.1 / Math.sqrt(sz);
+        if (c.infected <= 0) { c.infected = 0; c.immune = true; }
+      }
+      c.energy -= cost * dt;
+      if (c.energy <= 0) { killCreature(c, c.infected > 0 ? 'sick' : 'starve'); return false; }
+      const life = P[S.life] * c.lifeF * (c.sp === 4 ? 1 + 0.15 * sim.tribe.era : 1);
+      if (c.age > life) { killCreature(c, 'old'); return false; }
+      return true;
     }
 
     function updateCreature(c, dt) {
+      if (c.sp === 3) return updateBird(c, dt);
+      if (c.sp === 4) return updateHuman(c, dt);
       const S = SPECIES[c.sp], g = c.genes, R = ctx.R;
       c.age += dt; c.reproCD -= dt; c.boostT -= dt;
       const young = c.age < S.maturity ? 0.8 + 0.2 * c.age / S.maturity : 1;
@@ -832,25 +1146,7 @@ const SimCore = (() => {
       }
 
       if (c.state !== 'hunt') c.sprint = false;
-      // Évite le bord du terrain
-      const r = Math.hypot(c.x, c.z), edge = R - 2.5;
-      if (r > edge && spd > 0) {
-        const w = (r - edge) / 2.5 * 2, l = Math.hypot(dx, dz) || 1;
-        dx = dx / l - (c.x / r) * w; dz = dz / l - (c.z / r) * w;
-        if (c.state === 'wander') c.wa = Math.atan2(dz, dx);
-      }
-      let tx = 0, tz = 0;
-      const l = Math.hypot(dx, dz);
-      if (l > 1e-6 && spd > 0) { tx = dx / l * spd; tz = dz / l * spd; }
-      const k = 1 - Math.exp(-6 * dt);
-      c.vx += (tx - c.vx) * k; c.vz += (tz - c.vz) * k;
-      c.x += c.vx * dt; c.z += c.vz * dt;
-      const r2 = Math.hypot(c.x, c.z), lim = R - 0.6;
-      if (r2 > lim) {
-        c.x *= lim / r2; c.z *= lim / r2;
-        const nx = c.x / lim, nz = c.z / lim, vn = c.vx * nx + c.vz * nz;
-        if (vn > 0) { c.vx -= vn * nx; c.vz -= vn * nz; }
-      }
+      move(c, dx, dz, spd, dt);
 
       if (c.alpha) {
         // L'Alpha ne meurt pas de faim et repart au bout d'une minute (ou quand il reste peu de prédateurs)
@@ -859,22 +1155,280 @@ const SimCore = (() => {
         return;
       }
 
-      // Énergie : métabolisme (taille), vision, et mouvement (vitesse²)
-      const v = Math.hypot(c.vx, c.vz), sz = g.size;
-      // Être grand, avoir de gros muscles (gène vitesse) et bien voir coûtent de l'énergie, même au repos
-      let cost = COST.basal[c.sp] * Math.pow(sz, 1.25) + COST.muscle * g.speed * g.speed + COST.vision * vision / COST.refVision + COST.move * sz * (v / COST.refSpeed) ** 2;
-      cost *= P[S.cost] * ctx.heat;
-      if (c.infected > 0) {
-        c.infected -= dt; cost += 1.1 / Math.sqrt(sz);
-        if (c.infected <= 0) { c.infected = 0; c.immune = true; }
-      }
-      c.energy -= cost * dt;
-      if (c.energy <= 0) { killCreature(c, c.infected > 0 ? 'sick' : 'starve'); return; }
-      if (c.age > P[S.life] * c.lifeF) { killCreature(c, 'old'); return; }
+      if (!metab(c, dt, vision, 1)) return;
       if (c.age > S.maturity && c.energy >= P[S.repro] && c.reproCD <= 0 && ctx.alive < P.maxCreatures && c.state !== 'flee') {
         // Territoire / surpopulation : on attend avant de se reproduire
         if (crowded(c)) c.reproCD = 2;
         else reproduce(c);
+      }
+    }
+
+
+    /* ---------- Oiseaux : ils nichent dans les arbres, mangent leurs fruits et pêchent ---------- */
+    const treeOk = p => p && !p.dead && p.type === 0 && p.growth > 0.6;
+    function updateBird(c, dt) {
+      const S = SPECIES[3], g = c.genes;
+      c.age += dt; c.reproCD -= dt;
+      const speed = P.bSpeed * g.speed, vision = P.bVision * g.vision, maxE = P.bRepro * COST.maxE[3];
+      if (c.state === 'flee' || c.state === 'stun') c.state = 'wander';
+      if (c.home && c.home.dead) c.home = null;
+      if (c.perch && c.perch.dead) { c.perch = null; c.state = 'wander'; }
+      const night = sim.daylight() < 0.25;
+      let tx = null, tz = null;
+      c.thinkT -= dt;
+      if (c.state === 'perch') {
+        // Posé sur un arbre : il picore les fruits
+        const t = c.perch;
+        if (!t) c.state = 'wander';
+        else {
+          c.x = t.x; c.z = t.z; c.vx = c.vz = 0;
+          const take = Math.min(t.fruit, (c.energy < maxE ? 0.5 : 0) * dt);
+          t.fruit -= take; c.energy += take * P.bGain;
+          if (c.thinkT <= 0 && (!night || c.energy < maxE * 0.35)) {
+            c.thinkT = 0.4 + rng() * 0.4;
+            if (c.energy < maxE * 0.85 && t.fruit < 0.05) birdForage(c, vision);
+            else if (rng() < 0.03) birdForage(c, vision);
+          }
+        }
+      } else if (c.state === 'fly') {
+        const t = c.target;
+        if (!treeOk(t)) { c.state = 'wander'; c.target = null; }
+        else {
+          tx = t.x; tz = t.z;
+          if (Math.hypot(t.x - c.x, t.z - c.z) < 0.35) {
+            // Atterrissage : en volant d'arbre en arbre, l'oiseau sème des graines
+            if (c.flown > 4 && rng() < TUNE.birdSeed) {
+              const k = 0.3 + rng() * 0.5, x = c.sx + (t.x - c.sx) * k + gauss(), z = c.sz + (t.z - c.sz) * k + gauss();
+              if (x * x + z * z < (ctx.R - 1.5) ** 2 && !inWater(x, z, -0.2) && !nearBuilding(x, z, 0.3) && ctx.nPlants < P.plantMax * 1.1 && !gPlants.nearest(x, z, 0.9, q => !q.dead)) {
+                newPlant(x, z, 0.04, rng() < 0.6 ? 0 : 1); ctx.nPlants++;
+                sim.events.push({ type: 'seed', x, z, id: c.id });
+              }
+            }
+            c.state = 'perch'; c.perch = t; c.target = null;
+            if (!treeOk(c.home)) c.home = t;
+          }
+        }
+      } else if (c.state === 'fish') {
+        const f = c.target;
+        if (!f || f.dead || (f.diver && f.diver !== c)) { if (f && f.diver === c) f.diver = null; c.state = 'wander'; c.target = null; }
+        else {
+          f.diver = c; tx = f.x; tz = f.z;
+          if (Math.hypot(f.x - c.x, f.z - c.z) < 0.5) { c.state = 'dive'; c.timer = 0.6; }
+        }
+      } else if (c.state === 'dive') {
+        c.timer -= dt; c.vx *= 0.9; c.vz *= 0.9;
+        if (c.timer <= 0) {
+          const f = c.target; c.target = null;
+          if (f && !f.dead && rng() < 0.55) { killFish(f, 'eaten'); c.energy += P.bGain * 1.2; sim.events.push({ type: 'catch', x: f.x, z: f.z, id: c.id }); }
+          else if (f) f.diver = null;
+          c.state = 'wander'; c.thinkT = 0;
+        }
+      }
+      if (c.state === 'wander') {
+        if (c.thinkT <= 0) { c.thinkT = 0.3 + rng() * 0.3; birdForage(c, vision); }
+        if (c.state === 'wander') {
+          c.wa += (rng() - 0.5) * 4 * dt;
+          const r = Math.hypot(c.x, c.z); if (r > ctx.R - 3) c.wa = Math.atan2(-c.z, -c.x);
+          tx = c.x + Math.cos(c.wa); tz = c.z + Math.sin(c.wa);
+        }
+      }
+      // Vol
+      const flying = c.state !== 'perch';
+      c.fly += ((c.state === 'dive' ? -0.6 : flying ? 1 : 0) - c.fly) * Math.min(1, dt * 3);
+      if (tx != null) {
+        const dx = tx - c.x, dz = tz - c.z, l = Math.hypot(dx, dz) || 1, sp = Math.min(speed, l * 3);
+        const k = 1 - Math.exp(-4 * dt);
+        c.vx += (dx / l * sp - c.vx) * k; c.vz += (dz / l * sp - c.vz) * k;
+        c.x += c.vx * dt; c.z += c.vz * dt; c.flown += Math.hypot(c.vx, c.vz) * dt;
+        clampDisc(c, ctx.R - 0.8);
+      }
+      if (!metab(c, dt, vision, flying ? 1 : 0.7)) return;
+      if (c.age > S.maturity && c.energy >= P.bRepro && c.reproCD <= 0 && ctx.alive < P.maxCreatures && c.state === 'perch' && c.perch && c.perch.fruit > 0.4) {
+        c.home = c.perch;
+        if (crowded(c)) c.reproCD = 3; else reproduce(c);
+      }
+    }
+    function birdForage(c, vision) {
+      const maxE = P.bRepro * COST.maxE[3];
+      // Pêche : si le lac est proche et qu'un poisson est visible
+      if (c.energy < maxE * 0.7 && rng() < 0.45) {
+        // Les poissons des eaux profondes sont hors d'atteinte
+        const f = sim.nFish > 5 && gFish.nearest(c.x, c.z, vision, q => !q.dead && !q.diver && depth(q.x, q.z) < 0.9);
+        if (f) { c.state = 'fish'; c.target = f; f.diver = c; c.perch = null; return; }
+      }
+      // Sinon un arbre avec des fruits (de préférence son nid), pas trop fréquenté
+      let t = null;
+      if (treeOk(c.home) && c.home.fruit > 0.3 && c.home !== c.perch) t = c.home;
+      if (!t) t = gPlants.nearest(c.x, c.z, vision, q => treeOk(q) && q !== c.perch && q.fruit > 0.35 && q.nb < 3);
+      if (!t && !c.perch) t = gPlants.nearest(c.x, c.z, vision * 1.5, q => treeOk(q) && q.nb < 4);
+      if (t) { c.state = 'fly'; c.target = t; c.perch = null; c.sx = c.x; c.sz = c.z; c.flown = 0; }
+      else if (!c.perch) c.state = 'wander';
+    }
+
+    /* ---------- Humains ---------- */
+    const dwellOf = c => {
+      const T = sim.tribe;
+      if (c.home && !c.home.dead && c.home.prog >= 1) return c.home;
+      let best = null, bd = 1e9;
+      for (const b of T.buildings) if (!b.dead && b.prog >= 1 && BUILD[b.type].cap) { const d = (b.x - c.x) ** 2 + (b.z - c.z) ** 2; if (d < bd) { bd = d; best = b; } }
+      return (c.home = best);
+    };
+    function setGoal(c, kind, ref, x, z, work) { c.state = 'go'; c.job = kind; c.target = ref; c.goal = { x, z, work }; }
+    function humanPickJob(c, vision) {
+      const T = sim.tribe, pop = Math.max(1, sim.lastAlive[4]), resp = P.respect;
+      const wantFood = T.food < Math.min(pop * 8, foodCap() * 0.6) ? 2 : 0.5, wantWood = T.wood < Math.min(14 + (T.era >= 1 ? 10 : 0) + T.era * 4, woodCap() * 0.6) ? 1.5 : 0.3;
+      const site = T.buildings.find(b => !b.dead && b.prog < 1);
+      const opts = [];
+      opts.push(['gather', wantFood]);
+      if (sim.lastAlive[0] > 6 + 30 * resp) opts.push(['hunt', wantFood * (0.5 + 0.2 * T.era)]);
+      if ((sim.nFish || 0) > 3 + 15 * resp) opts.push(['fish', wantFood * (T.era >= 2 ? 1.6 : 0.6)]);
+      if (T.era >= 1 && countB('farm')) opts.push(['harvest', wantFood * 2]);
+      if ((T.nTrees || 0) > 10 + 40 * resp) opts.push(['wood', wantWood]);
+      if (site) opts.push(['build', 4]);
+      let tot = 0; for (const o of opts) tot += o[1];
+      let r = rng() * tot, job = 'gather';
+      for (const o of opts) { r -= o[1]; if (r <= 0) { job = o[0]; break; } }
+      const range = vision * 1.6;
+      if (job === 'gather') {
+        const p = gPlants.nearest(c.x, c.z, range, q => !q.dead && (q.type === 1 || q.type === 2) && q.growth > 0.5 && !q.eater);
+        if (p) { p.eater = c; return setGoal(c, 'gather', p, p.x, p.z, 1.2); }
+      } else if (job === 'harvest') {
+        const p = gPlants.nearest(c.x, c.z, range * 1.5, q => !q.dead && q.type === 3 && q.growth > 0.85 && !q.eater);
+        if (p) { p.eater = c; return setGoal(c, 'harvest', p, p.x, p.z, 1); }
+      } else if (job === 'wood') {
+        const p = gPlants.nearest(c.x, c.z, range, q => !q.dead && q.type === 0 && q.growth > 0.8 && !q.eater && q.nb === 0);
+        if (p) { p.eater = c; return setGoal(c, 'wood', p, p.x, p.z, 2.5); }
+      } else if (job === 'hunt') {
+        const h = gHerb.nearest(c.x, c.z, vision, q => !q.dead && (!q.hunter || q.hunter.dead || q.hunter.target !== q));
+        if (h) { c.state = 'hunt'; c.job = 'hunt'; c.target = h; h.hunter = c; c.chaseT = 0; return; }
+      } else if (job === 'fish') {
+        const L = lakeOf(ctx.R), boat = T.era >= 2 && countB('boat') ? T.buildings.find(b => !b.dead && b.type === 'boat') : null;
+        if (boat) return setGoal(c, 'fish', boat, boat.sx, boat.sz, 3);
+        // Sur la rive la plus proche
+        const a = Math.atan2(c.z - L.z, c.x - L.x);
+        for (let k = 0; k < 8; k++) {
+          const aa = a + (k % 2 ? 1 : -1) * Math.ceil(k / 2) * 0.35, x = L.x + Math.cos(aa) * L.r * 1.15, z = L.z + Math.sin(aa) * L.r * 1.15;
+          if (!inWater(x, z, -0.1)) return setGoal(c, 'fish', null, x, z, 3);
+        }
+      } else if (job === 'build') {
+        return site.type === 'boat' ? setGoal(c, 'build', site, site.sx, site.sz, 0) : setGoal(c, 'build', site, site.x, site.z, 0);
+      }
+      // Rien à faire : il flâne autour du village
+      setGoal(c, 'idle', null, T.x + gauss() * 3, T.z + gauss() * 3, 1.5);
+    }
+    const foodCap = () => 150 + 50 * sim.tribe.era, woodCap = () => 60 + 20 * sim.tribe.era;
+    function humanArrive(c) {
+      const T = sim.tribe, p = c.target, era = T.era;
+      switch (c.job) {
+        case 'gather': if (p && !p.dead) { c.load = 2 + 2.5 * p.growth * (p.type === 2 ? 1.3 : 1); c.loadType = 'food'; killPlant(p, 'picked'); } break;
+        case 'harvest': if (p && !p.dead) { c.load = 5; c.loadType = 'food'; const f = p.farm; killPlant(p, 'picked'); if (f && !f.dead) { const q = newPlant(p.x, p.z, 0.05, 3); q.farm = f; f.crops++; } } break;
+        case 'wood':
+          if (p && !p.dead) {
+            c.load = 3; c.loadType = 'wood'; killPlant(p, 'cut');
+            // Une tribu respectueuse replante
+            if (rng() < P.respect) { const a = rng() * 6.283, x = p.x + Math.cos(a) * 1.5, z = p.z + Math.sin(a) * 1.5; if (!inWater(x, z, -0.2) && !nearBuilding(x, z, 0.3)) newPlant(x, z, 0.04, 0); }
+          }
+          break;
+        case 'fish': {
+          const boat = p && p.type === 'boat';
+          const f = gFish.nearest(c.x, c.z, boat ? 8 : 4, q => !q.dead);
+          if (f && rng() < (boat ? 0.9 : 0.6)) { killFish(f, 'fished'); c.load = boat ? 10 : 5; c.loadType = 'food'; sim.events.push({ type: 'catch', x: f.x, z: f.z, id: c.id }); }
+          break;
+        }
+        case 'deposit':
+          // Greniers et réserves de bois ont une taille limitée
+          if (c.loadType === 'food') T.food = Math.min(T.food + c.load, foodCap()); else if (c.loadType === 'wood') T.wood = Math.min(T.wood + c.load, woodCap());
+          c.load = 0; c.loadType = null;
+          humanEat(c);
+          break;
+      }
+      if (p && p.eater === c) p.eater = null;
+      c.state = 'wander'; c.target = null; c.thinkT = 0;
+    }
+    function humanEat(c) {
+      const T = sim.tribe, maxE = P.uRepro * COST.maxE[4], per = P.uGain / 4;
+      const need = Math.max(0, maxE * 0.8 - c.energy) / per, take = Math.min(T.food, need);
+      T.food -= take; c.energy += take * per;
+    }
+    function updateHuman(c, dt) {
+      const S = SPECIES[4], g = c.genes, T = sim.tribe;
+      c.age += dt; c.reproCD -= dt; c.boostT -= dt;
+      const young = c.age < S.maturity ? 0.7 + 0.3 * c.age / S.maturity : 1;
+      const maxSpeed = P.uSpeed * g.speed * young * (c.boostT > 0 ? 1.25 : 1), vision = P.uVision * g.vision, maxE = P.uRepro * COST.maxE[4];
+      let dx = 0, dz = 0, spd = 0;
+      const night = sim.daylight() < 0.22;
+      c.thinkT -= dt;
+      if (c.thinkT <= 0) {
+        c.thinkT = 0.25 + rng() * 0.1;
+        if (c.infected > 0) spread(c, gHum);
+        // Danger : un prédateur qui le chasse, ou tout près
+        const pr = gPred.nearest(c.x, c.z, 4, q => !q.dead && (q.target === c || (q.x - c.x) ** 2 + (q.z - c.z) ** 2 < 4));
+        if (pr && c.state !== 'sleep' && c.state !== 'fight') {
+          if (c.target && c.target.eater === c) c.target.eater = null;
+          // Dès l'âge agricole, les humains ont des armes et se défendent
+          if (T.era >= 1 && !pr.alpha && pr.target === c && rng() < 0.4) { c.state = 'fight'; c.target = pr; c.chaseT = 0; }
+          else scare(c, c.x - pr.x, c.z - pr.z, 1);
+        } else if (c.state === 'flee') c.state = 'wander';
+        if (c.state === 'sleep' && !night) c.state = 'wander';
+        if (c.state === 'wander') {
+          const home = dwellOf(c);
+          if (night && home) setGoal(c, 'home', home, home.x + gauss() * 0.4, home.z + gauss() * 0.4, 0);
+          else if (c.load > 0 || (c.energy < maxE * 0.45 && T.food > 1)) setGoal(c, 'deposit', null, T.x + gauss() * 0.8, T.z + gauss() * 0.8, 0.3);
+          else humanPickJob(c, vision);
+        }
+      }
+      if (c.state === 'flee') { dx = c.fx; dz = c.fz; spd = maxSpeed; }
+      else if (c.state === 'go') {
+        const gl = c.goal, p = c.target;
+        if (p && p.dead && c.job !== 'build') { c.state = 'wander'; c.target = null; }
+        else if (c.job === 'build' && (!p || p.dead || p.prog >= 1)) { c.state = 'wander'; c.target = null; }
+        else {
+          dx = gl.x - c.x; dz = gl.z - c.z;
+          const d = Math.hypot(dx, dz);
+          if (d < (c.job === 'build' && p.type !== 'boat' ? p.size + 0.3 : c.job === 'home' ? 0.6 : 0.4)) {
+            dx = dz = 0;
+            if (c.job === 'home') { c.state = 'sleep'; humanEat(c); }
+            else { c.state = 'work'; c.timer = gl.work; }
+          } else spd = maxSpeed * (c.load ? 0.8 : 1);
+        }
+      } else if (c.state === 'work') {
+        c.timer -= dt;
+        if (c.job === 'build') {
+          const b = c.target;
+          if (!b || b.dead || b.prog >= 1) { c.state = 'wander'; c.target = null; }
+          else {
+            b.prog += dt * BRATE[b.type];
+            if (b.prog >= 1) { b.prog = 1; sim.events.push({ type: 'built', what: b.type, x: b.x, z: b.z }); c.state = 'wander'; c.target = null; }
+          }
+        } else if (c.timer <= 0) humanArrive(c);
+      } else if (c.state === 'hunt' || c.state === 'fight') {
+        const h = c.target;
+        c.chaseT += dt;
+        if (!h || h.dead || c.chaseT > (c.state === 'hunt' ? 7 : 4)) { c.state = 'wander'; c.target = null; }
+        else {
+          dx = h.x - c.x; dz = h.z - c.z;
+          if (Math.hypot(dx, dz) < 0.75 + SPECIES[h.sp].radius * h.genes.size) {
+            dx = dz = 0;
+            const win = c.state === 'hunt' ? 0.35 + 0.1 * T.era : 0.15 + 0.08 * T.era;
+            if (rng() < win) {
+              killCreature(h, 'hunted'); c.kills++;
+              c.load = h.sp === 0 ? 12 * h.genes.size : 6; c.loadType = 'food';
+              sim.events.push({ type: 'kill', x: h.x, z: h.z, id: c.id, prey: h.sp, human: true });
+              c.state = 'wander'; c.target = null;
+            } else if (c.state === 'fight') {
+              c.energy -= 14; h.state = 'stun'; h.timer = 1; c.state = 'wander'; c.target = null; scare(c, -dx || 1, -dz, 1);
+              sim.events.push({ type: 'miss', x: h.x, z: h.z, id: c.id });
+            } else { c.state = 'stun'; c.timer = 0.8; c.target = null; h.boostT = 1.5; }
+          } else spd = maxSpeed * 1.1;
+        }
+      } else if (c.state === 'stun') { c.timer -= dt; if (c.timer <= 0) c.state = 'wander'; }
+      move(c, dx, dz, spd, dt);
+      if (c.state === 'sleep') { c.vx *= 0.5; c.vz *= 0.5; }
+      const cold = sim.cat && sim.cat.type === 'winter' && T.wood <= 0 ? 1.35 : 1;
+      if (!metab(c, dt, vision, (c.state === 'sleep' ? 0.4 : 1) * cold)) return;
+      // Bébé : uniquement s'il y a de la place dans les logements
+      if (c.age > S.maturity && c.energy >= P.uRepro && c.reproCD <= 0 && ctx.alive < P.maxCreatures && (c.state === 'sleep' || c.state === 'wander')) {
+        if (crowded(c)) c.reproCD = 4; else reproduce(c);
       }
     }
 
@@ -886,13 +1440,14 @@ const SimCore = (() => {
 
     /* ---------- Évènements aléatoires ---------- */
     function migration(sp) {
-      const R = P.worldSize, S = SPECIES[sp], a = rng() * 6.283, n = sp === 2 ? 4 : 8;
+      const R = P.worldSize, S = SPECIES[sp], a = rng() * 6.283, n = sp === 0 ? 8 : 4;
       const cx = Math.cos(a) * (R - 3), cz = Math.sin(a) * (R - 3), mg = meanGenes(sp, 0);
       for (let i = 0; i < n && ctx.alive < P.maxCreatures; i++) {
         // Des gènes venus d'ailleurs : un coup de pouce (ou pas) pour l'évolution
         const genes = { speed: clampG('speed', mg.speed * (1 + gauss() * 0.15)), vision: clampG('vision', mg.vision * (1 + gauss() * 0.15)), size: clampG('size', mg.size * (1 + gauss() * 0.15)) };
         const c = newCreature(sp, cx + gauss() * 1.5, cz + gauss() * 1.5, genes, P[S.repro] * 0.6, 0);
         clampDisc(c, R - 0.8); c.age = S.maturity; c.migrant = true;
+        if (inWater(c.x, c.z, -0.1)) { const [x, z] = randLand(R * 0.8); c.x = x; c.z = z; }
         ctx.alive++;
       }
       sim.events.push({ type: 'migration', sp, n, x: cx, z: cz });
@@ -911,11 +1466,12 @@ const SimCore = (() => {
         if (d2 < 3.2) killCreature(c, 'comet');
         else if (d2 < 64) scare(c, dx, dz, 1.5);
       }
+      for (const b of sim.tribe.buildings) if (!b.dead && b.type !== 'cave' && b.type !== 'boat' && (b.x - cm.x) ** 2 + (b.z - cm.z) ** 2 < 25) { b.dead = true; b.dyingT = 1; sim.events.push({ type: 'destroyed', what: b.type, x: b.x, z: b.z }); }
       // La poussière de la comète est fertile : des baies poussent tout autour
       for (let i = 0; i < 10; i++) {
         const a = i / 10 * 6.283 + rng() * 0.4, d = 4 + rng() * 2;
         const q = { x: cm.x + Math.cos(a) * d, z: cm.z + Math.sin(a) * d }; clampDisc(q, R - 1);
-        newPlant(q.x, q.z, 0.85, 2);
+        if (!inWater(q.x, q.z, -0.1)) newPlant(q.x, q.z, 0.85, 2);
       }
       sim.events.push({ type: 'impact', x: cm.x, z: cm.z });
     }
@@ -930,7 +1486,7 @@ const SimCore = (() => {
       return true;
     }
     sim.triggerEvent = function (type) {
-      if (type === 'migration') migration(rng() < 0.65 ? 0 : 2);
+      if (type === 'migration') { const r = rng(); migration(r < 0.5 ? 0 : r < 0.75 ? 2 : 3); }
       else if (type === 'comet') comet();
       else if (type === 'winter') { if (sim.cat) return false; sim.triggerCatastrophe('winter'); }
       else if (type === 'alpha') return spawnAlpha();
@@ -956,16 +1512,24 @@ const SimCore = (() => {
         else if (cat.type === 'winter') { growMul *= 0.45; seedMul *= 0.5; ctx.heat = 1.1; }
         if (cat.left <= 0) { sim.events.push({ type: 'catEnd', cat: cat.type }); sim.cat = null; }
       }
+      // Niveau du lac : monte avec la pluie, baisse avec la sécheresse
+      const wT = cat && cat.type === 'rain' ? 1.25 : cat && cat.type === 'drought' ? 0.35 : 1;
+      sim.water += (wT - sim.water) * Math.min(1, dt * (wT < sim.water ? 0.06 : 0.1));
+      const T = sim.tribe;
+      growMul *= 1 - 0.5 * T.pol;
       if (sim.comet) { sim.comet.t -= dt; if (sim.comet.t <= 0) { const cm = sim.comet; sim.comet = null; impact(cm); } }
       if (P.events && sim.t >= sim.nextEventT) { sim.nextEventT = sim.t + 110 + rng() * 90; randomEvent(); }
 
-      gPlants.reset(R); gCarc.reset(R);
+      gPlants.reset(R); gCarc.reset(R); gFish.reset(R);
       for (const gr of grids) gr.reset(R);
       let nPlants = 0;
-      for (const p of sim.plants) if (!p.dead) { gPlants.add(p); nPlants++; }
+      for (const p of sim.plants) if (!p.dead) { gPlants.add(p); p.nb = 0; if (p.type !== 3) nPlants++; }
       for (const k of sim.carcasses) if (!k.dead) gCarc.add(k);
+      for (const f of sim.fish) if (!f.dead) gFish.add(f);
       ctx.alive = 0;
-      for (let sp = 0; sp < 3; sp++) for (const c of sim.creatures[sp]) if (!c.dead) { grids[sp].add(c); ctx.alive++; }
+      for (let sp = 0; sp < NSP; sp++) for (const c of sim.creatures[sp]) if (!c.dead) { grids[sp].add(c); ctx.alive++; }
+      for (const b of sim.creatures[3]) if (!b.dead && b.home && !b.home.dead) b.home.nb++;
+      const wetMul = Math.min(1.2, sim.water), flood = (sim.t * 2 | 0) !== ((sim.t - dt) * 2 | 0);
 
       // --- Plantes
       const plants = sim.plants, n0 = plants.length;
@@ -973,16 +1537,23 @@ const SimCore = (() => {
         const p = plants[i];
         if (p.dead) { p.dyingT -= dt; continue; }
         p.age += dt;
-        if (p.growth < 1) p.growth = Math.min(1, p.growth + PLANT.grow * growMul * dt);
+        if (p.eater && p.eater.dead) p.eater = null;
+        // Près de l'eau, ça pousse mieux ; le blé des champs pousse vite
+        const fert = (1 + 0.8 * p.wet * wetMul) * (p.type === 3 ? 1.5 : 1);
+        if (p.growth < 1) p.growth = Math.min(1, p.growth + PLANT.grow * growMul * fert * dt);
+        if (p.type === 0 && p.growth > 0.6 && p.fruit < 1) p.fruit = Math.min(1, p.fruit + TUNE.treeFood * growMul * fert * dt);
+        const nat = p.type !== 3 ? 1 : 0;
+        if (flood && depth(p.x, p.z) > 0.1) { killPlant(p, 'flood'); nPlants -= nat; continue; }
+        if (p.type === 3) { if (wilt > 0 && rng() < wilt * 0.5 * dt) killPlant(p, 'dry'); continue; }
         const life = PLANT.life * p.lifeF * (p.type === 2 ? 0.7 : 1);
         if (p.age > life) { killPlant(p, 'old'); nPlants--; continue; }
-        if (wilt > 0 && p.eater == null && rng() < wilt * dt) { killPlant(p, 'dry'); nPlants--; continue; }
+        if (wilt > 0 && p.eater == null && rng() < wilt * (1 - 0.8 * p.wet) * dt) { killPlant(p, 'dry'); nPlants--; continue; }
       }
       // Germination : flux de graines régulier (proportionnel à la surface), surtout près des plantes existantes
       if (nPlants < maxEff) {
         const rate = PLANT.rate * seedMul * (R / 26) ** 2 * (1 - nPlants / maxEff);
         let k = rate * dt; const parents = tmpParents; parents.length = 0;
-        for (let i = 0; i < n0; i++) { const p = plants[i]; if (!p.dead && p.type !== 2 && p.growth > 0.55) parents.push(p); }
+        for (let i = 0; i < n0; i++) { const p = plants[i]; if (!p.dead && p.type < 2 && p.growth > 0.55) parents.push(p); }
         while (k > 0) {
           if (rng() < k) {
             let x, z, type = rng() < 0.4 ? 0 : 1;
@@ -990,7 +1561,7 @@ const SimCore = (() => {
               const p = parents[(rng() * parents.length) | 0], a = rng() * 6.283, d = 1.3 + rng() * 3.5;
               x = p.x + Math.cos(a) * d; z = p.z + Math.sin(a) * d; if (rng() < 0.85) type = p.type;
             } else [x, z] = randInDisc(R - 1.2);
-            if (x * x + z * z < (R - 1.2) ** 2 && !gPlants.nearest(x, z, 0.95, q => !q.dead)) { newPlant(x, z, 0.04, type); nPlants++; }
+            if (x * x + z * z < (R - 1.2) ** 2 && !inWater(x, z, -0.1) && !nearBuilding(x, z, 0.2) && !gPlants.nearest(x, z, 0.95, q => !q.dead)) { newPlant(x, z, 0.04, type); nPlants++; }
           }
           k -= 1;
         }
@@ -1003,8 +1574,10 @@ const SimCore = (() => {
         if (k.food <= 0.5 || k.age > 50) { k.dead = true; k.dyingT = 0.8; }
       }
 
+      ctx.nPlants = nPlants;
+      updateFish(dt);
       // --- Créatures
-      for (let sp = 0; sp < 3; sp++) {
+      for (let sp = 0; sp < NSP; sp++) {
         const arr = sim.creatures[sp], n = arr.length;
         for (let i = 0; i < n; i++) {
           const c = arr[i];
@@ -1014,18 +1587,18 @@ const SimCore = (() => {
       }
 
       // --- Extinctions + réapparition (filet de sécurité, désactivable)
-      for (let sp = 0; sp < 3; sp++) {
+      for (let sp = 0; sp < NSP; sp++) {
         let n = 0; for (const c of sim.creatures[sp]) if (!c.dead && !c.alpha) n++;
         if (n === 0 && sim.lastAlive[sp] > 0) sim.events.push({ type: 'extinct', sp });
         sim.lastAlive[sp] = n;
-        if (n === 0 && P.respawn && P[SPECIES[sp].count] > 0) {
+        if (n === 0 && P.respawn && P[SPECIES[sp].count] > 0 && sp !== 4) {
           sim.extinctT[sp] += dt;
-          if (sim.extinctT[sp] > [8, 15, 20][sp]) {
+          if (sim.extinctT[sp] > [8, 15, 20, 20][sp]) {
             sim.extinctT[sp] = 0;
-            const k = [8, 2, 3][sp];
+            const k = [8, 2, 3, 4][sp];
             for (let i = 0; i < k; i++) {
               let x, z;
-              if (sp === 1) { const a = rng() * 6.283; x = Math.cos(a) * (R - 2); z = Math.sin(a) * (R - 2); } else [x, z] = randInDisc(R * 0.8);
+              if (sp === 1 || sp === 3) { const a = rng() * 6.283; x = Math.cos(a) * (R - 2); z = Math.sin(a) * (R - 2); } else [x, z] = randLand(R * 0.8);
               newCreature(sp, x, z, baseGenes(), P[SPECIES[sp].repro] * 0.6, 0);
               ctx.alive++;
             }
@@ -1034,13 +1607,19 @@ const SimCore = (() => {
         } else sim.extinctT[sp] = 0;
       }
 
-      compact(sim.plants); compact(sim.carcasses);
+      tribeStep(dt, sim.lastAlive[4]);
+      for (const b of T.buildings) if (b.dead) b.dyingT = (b.dyingT || 1) - dt;
+      T.buildings = T.buildings.filter(b => !b.dead || b.dyingT > 0);
+      compact(sim.plants); compact(sim.carcasses); compact(sim.fish);
       for (const arr of sim.creatures) compact(arr);
     };
 
     sim.counts = function () {
-      const o = { plants: 0, herb: 0, pred: 0, scav: 0 };
-      for (const p of sim.plants) if (!p.dead) o.plants++;
+      const o = { plants: 0, herb: 0, pred: 0, scav: 0, bird: 0, hum: 0, fish: 0 };
+      for (const p of sim.plants) if (!p.dead && p.type !== 3) o.plants++;
+      for (const c of sim.creatures[3]) if (!c.dead) o.bird++;
+      for (const c of sim.creatures[4]) if (!c.dead) o.hum++;
+      for (const f of sim.fish) if (!f.dead) o.fish++;
       for (const c of sim.creatures[0]) if (!c.dead) o.herb++;
       for (const c of sim.creatures[1]) if (!c.dead && !c.alpha) o.pred++;
       for (const c of sim.creatures[2]) if (!c.dead) o.scav++;
@@ -1049,9 +1628,12 @@ const SimCore = (() => {
 
     sim.sample = function () {
       const o = { t: sim.t, plants: 0 };
-      for (const p of sim.plants) if (!p.dead) o.plants++;
-      const keys = [['herb', 'eH', 'hSpd', 'hVis', 'hSize'], ['pred', 'eP', 'pSpd', 'pVis', 'pSize'], ['scav', 'eS', 'sSpd', 'sVis', 'sSize']];
-      for (let sp = 0; sp < 3; sp++) {
+      for (const p of sim.plants) if (!p.dead && p.type !== 3) o.plants++;
+      let nf = 0; for (const f of sim.fish) if (!f.dead) nf++;
+      const T = sim.tribe;
+      o.fish = nf; o.food = T.food; o.wood = T.wood; o.pol = T.pol * 100; o.know = T.know; o.era = T.era; o.water = sim.water * 100;
+      const keys = [['herb', 'eH', 'hSpd', 'hVis', 'hSize'], ['pred', 'eP', 'pSpd', 'pVis', 'pSize'], ['scav', 'eS', 'sSpd', 'sVis', 'sSize'], ['bird', 'eB', 'bSpd', 'bVis', 'bSize'], ['hum', 'eU', 'uSpd', 'uVis', 'uSize']];
+      for (let sp = 0; sp < NSP; sp++) {
         let n = 0, e = 0, s = 0, v = 0, z = 0;
         for (const c of sim.creatures[sp]) if (!c.dead && !c.alpha) { n++; e += c.energy; s += c.genes.speed; v += c.genes.vision; z += c.genes.size; }
         const K = keys[sp];
@@ -1067,7 +1649,7 @@ const SimCore = (() => {
       for (let i = 0; i < 5; i++) {
         const a = rng() * 6.283, d = i === 0 ? 0 : 0.7 + rng() * 1.1;
         const q = { x: o.x + Math.cos(a) * d, z: o.z + Math.sin(a) * d }; clampDisc(q, R - 1);
-        newPlant(q.x, q.z, 0.75 + rng() * 0.25, 2);
+        if (!inWater(q.x, q.z, -0.1)) newPlant(q.x, q.z, 0.75 + rng() * 0.25, 2);
       }
       sim.events.push({ type: 'food', x: o.x, z: o.z });
     };
@@ -1097,7 +1679,7 @@ const SimCore = (() => {
           let x, z;
           if (alive.length && rng() < 0.7) { const p = alive[(rng() * alive.length) | 0], a = rng() * 6.283, d = 1.2 + rng() * 3; x = p.x + Math.cos(a) * d; z = p.z + Math.sin(a) * d; }
           else [x, z] = randInDisc(R - 1.2);
-          if (x * x + z * z < (R - 1.2) ** 2) newPlant(x, z, 0.1, rng() < 0.4 ? 0 : 1);
+          if (x * x + z * z < (R - 1.2) ** 2 && !inWater(x, z, -0.1) && !nearBuilding(x, z, 0.2)) newPlant(x, z, 0.1, rng() < 0.4 ? 0 : 1);
         }
       } else if (type === 'drought') {
         for (const p of sim.plants) if (!p.dead && p.eater == null && rng() < 0.2) killPlant(p, 'dry');
@@ -1108,7 +1690,15 @@ const SimCore = (() => {
     // Taille du terrain modifiée : on ramène tout le monde à l'intérieur
     sim.resize = function () {
       const R = P.worldSize; ctx.R = R;
-      for (const p of sim.plants) if (Math.hypot(p.x, p.z) > R - 1) { p.dead = true; p.dyingT = 0; }
+      buildHeightCache();
+      for (const p of sim.plants) if (Math.hypot(p.x, p.z) > R - 1 || inWater(p.x, p.z, 0)) { p.dead = true; p.dyingT = 0; if (p.farm) { p.farm.crops--; p.farm = null; } } else p.wet = nearWater(p.x, p.z);
+      for (const f of sim.fish) if (!inWater(f.x, f.z, 0.1)) { f.dead = true; f.dyingT = 0; }
+      // Le village se déplace avec le bord du monde
+      const T = sim.tribe, v = villageOf(R), ox = v.x - T.x, oz = v.z - T.z;
+      T.x = v.x; T.z = v.z;
+      for (const b of T.buildings) if (b.type !== 'boat') { b.x += ox; b.z += oz; } else { const L = lakeOf(R), a = Math.atan2(T.z - L.z, T.x - L.x); b.x = L.x + Math.cos(a) * L.r * 0.75; b.z = L.z + Math.sin(a) * L.r * 0.75; b.sx = L.x + Math.cos(a) * L.r * 1.2; b.sz = L.z + Math.sin(a) * L.r * 1.2; }
+      for (const p of sim.plants) if (p.type === 3 && p.farm) { p.x += ox; p.z += oz; } else if (!p.dead && nearBuilding(p.x, p.z, 0)) { p.dead = true; p.dyingT = 0; }
+      compact(sim.fish);
       for (const k of sim.carcasses) if (Math.hypot(k.x, k.z) > R - 1) { k.dead = true; k.dyingT = 0; }
       for (const arr of sim.creatures) for (const c of arr) clampDisc(c, R - 0.6);
       compact(sim.plants); compact(sim.carcasses);
@@ -1118,7 +1708,7 @@ const SimCore = (() => {
     return sim;
   }
 
-  return { DEFAULTS, PRESETS, SPECIES, GENE_KEYS, GENE_LIM, COST, PLANT, TUNE, RARE, heightAt, createSim };
+  return { DEFAULTS, PRESETS, SPECIES, GENE_KEYS, GENE_LIM, COST, PLANT, TUNE, RARE, ERA, BUILD, FARM_R, heightAt, lakeOf, villageOf, createSim };
 })();
 if (typeof window !== 'undefined') window.SimCore = SimCore;
 </script>
@@ -1129,7 +1719,7 @@ if (typeof window !== 'undefined') window.SimCore = SimCore;
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
-const { DEFAULTS, PRESETS, SPECIES, COST, PLANT, heightAt, createSim } = window.SimCore;
+const { DEFAULTS, PRESETS, SPECIES, COST, PLANT, ERA, BUILD, FARM_R, heightAt, lakeOf, villageOf, createSim } = window.SimCore;
 const $ = id => document.getElementById(id);
 const fx = (v, d = 1) => (+v).toFixed(d).replace('.', ',');
 const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
@@ -1141,12 +1731,16 @@ const easeInOut = t => t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2
 const hash = n => { const s = Math.sin(n * 12.9898) * 43758.5453; return s - Math.floor(s); };
 const esc = s => String(s).replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
 
-// Infos d'affichage par espèce (0 = herbivore, 1 = prédateur, 2 = charognard)
+// Infos d'affichage par espèce (0 = herbivore, 1 = prédateur, 2 = charognard, 3 = oiseau, 4 = humain)
 const SPM = [
   { key: 'herb', emo: '🐰', label: 'Herbivores', one: 'herbivore', color: '#3b82f6' },
   { key: 'pred', emo: '🦊', label: 'Prédateurs', one: 'prédateur', color: '#ff6b3d' },
   { key: 'scav', emo: '🦅', label: 'Charognards', one: 'charognard', color: '#a2845e' },
+  { key: 'bird', emo: '🐦', label: 'Oiseaux', one: 'oiseau', color: '#0fb5ae' },
+  { key: 'hum', emo: '🧑', label: 'Humains', one: 'humain', color: '#c2410c' },
 ];
+const FISH_M = { key: 'fish', emo: '🐟', label: 'Poissons', one: 'poisson', color: '#38bdf8' };
+const spm = sp => sp === 'fish' ? FISH_M : SPM[sp];
 const RARE_TXT = { gold: ['✨ Doré', 'doré'], glow: ['💡 Lumineux', 'lumineux'], giant: ['🐘 Géant', 'géant'] };
 
 /* ---------- Stockage local (peut être indisponible : on protège tout) ---------- */
@@ -1235,6 +1829,7 @@ const topMat = new THREE.MeshLambertMaterial({ vertexColors: true });
 const underMat = new THREE.MeshLambertMaterial({ vertexColors: true });
 let terrainTop = null, terrainUnder = null, terrainR = 0;
 
+const SAND = new THREE.Color('#ecdcb0'), LAKEBED = new THREE.Color('#cdbf94'), LAKEDEEP = new THREE.Color('#7fa7a0');
 function ringIndex(rings, seg) {
   const idx = [];
   for (let i = 0; i < rings; i++) for (let j = 0; j < seg; j++) {
@@ -1245,8 +1840,8 @@ function ringIndex(rings, seg) {
 }
 function buildTerrain() {
   const R = P.worldSize; terrainR = R;
-  const SEG = 120, RINGS = Math.round(R * 1.8), BEV = 7, UNDER = 18, bev = 1.3, depth = R * 0.45;
-  const pos = [], col = [], c = new THREE.Color();
+  const SEG = 144, RINGS = Math.round(R * 2.2), BEV = 7, UNDER = 18, bev = 1.3, depth = R * 0.45;
+  const pos = [], col = [], c = new THREE.Color(), LK = lakeOf(R);
   const low = new THREE.Color('#a6d792'), high = new THREE.Color('#c2e6a8'), lip = new THREE.Color('#d5ecbf');
   for (let i = 0; i <= RINGS + BEV; i++) for (let j = 0; j < SEG; j++) {
     const a = j / SEG * Math.PI * 2;
@@ -1257,6 +1852,11 @@ function buildTerrain() {
     pos.push(x, y, z);
     c.copy(low).lerp(high, clamp((y + 0.6) / 2.4, 0, 1));
     c.offsetHSL(0, 0, (Math.sin(x * 0.9 + z * 0.5) * Math.sin(z * 0.7 - x * 0.3)) * 0.018 + (hash(i * 131 + j) - 0.5) * 0.008);
+    // Plage de sable autour du lac, fond du lac plus sombre
+    if (i <= RINGS && Math.hypot(x - LK.x, z - LK.z) < LK.r * 1.8) {
+      if (y < -0.95) c.copy(LAKEBED).lerp(LAKEDEEP, clamp((-0.95 - y) / 1.2, 0, 1));
+      else c.lerp(SAND, clamp((0.05 - y) / 0.6, 0, 1));
+    }
     if (i > RINGS) c.lerp(lip, (i - RINGS) / BEV * 0.8);
     col.push(c.r, c.g, c.b);
   }
@@ -1289,7 +1889,7 @@ function buildTerrain() {
   if (terrainTop) { terrainTop.geometry.dispose(); terrainUnder.geometry.dispose(); terrainTop.geometry = g1; terrainUnder.geometry = g2; }
   else { terrainTop = new THREE.Mesh(g1, topMat); terrainUnder = new THREE.Mesh(g2, underMat); scene.add(terrainTop, terrainUnder); }
   for (const p of sim.plants) p._y = undefined;
-  cloudLayout();
+  cloudLayout(); layoutWater();
 }
 let terrainTimer = 0;
 const scheduleTerrain = () => { clearTimeout(terrainTimer); terrainTimer = setTimeout(buildTerrain, 120); };
@@ -1377,6 +1977,98 @@ const carcGeo = merge([
   { geo: sph(0.11, 8, 6), c: '#f4efe6', m: M(0.12, 0.13, 0.28) },
 ]);
 
+// Blé des champs
+const wheatParts = [];
+for (let i = 0; i < 5; i++) { const a = i / 5 * 6.283, r = i ? 0.14 : 0; wheatParts.push({ geo: cyl(0.018, 0.022, 0.6, 4), c: '#d9c06a', m: M(Math.cos(a) * r, 0.3, Math.sin(a) * r, 1, 1, 1, Math.cos(a) * 0.12, 0, Math.sin(a) * 0.12) }, { geo: sph(0.05, 5, 4), c: '#f0c44c', m: M(Math.cos(a) * r * 1.4, 0.64, Math.sin(a) * r * 1.4, 1, 2.2, 1) }); }
+const wheatGeo = merge(wheatParts);
+// Poisson (avant = +Z)
+const fishGeo = merge([
+  { geo: sph(0.5, 10, 7), c: '#ffffff', m: M(0, 0, 0, 0.42, 0.55, 1) },
+  { geo: cone(0.3, 0.4, 6), c: '#ffffff', m: M(0, 0, -0.6, 1, 0.25, 1, -Math.PI / 2, 0, 0) },
+  { geo: sph(0.06, 5, 4), c: '#1f2937', m: M(0.14, 0.08, 0.32) },
+  { geo: sph(0.06, 5, 4), c: '#1f2937', m: M(-0.14, 0.08, 0.32) },
+]);
+// Oiseau : corps rond, tête, bec ; les ailes sont une pièce à part
+const birdBodyGeo = merge([
+  { geo: sph(0.5, 12, 9), c: '#ffffff', m: M(0, 0.45, 0, 0.62, 0.6, 0.85) },
+  { geo: sph(0.27, 10, 8), c: '#ffffff', m: M(0, 0.76, 0.32) },
+  { geo: cone(0.08, 0.22, 6), c: '#ffb020', m: M(0, 0.74, 0.62, 1, 1, 1, Math.PI / 2, 0, 0) },
+  { geo: sph(0.045, 5, 4), c: '#111827', m: M(-0.12, 0.82, 0.48) },
+  { geo: sph(0.045, 5, 4), c: '#111827', m: M(0.12, 0.82, 0.48) },
+  { geo: sph(0.32, 8, 6), c: '#fff7e0', m: M(0, 0.36, 0.12, 0.85, 0.75, 0.8) },
+  { geo: cone(0.16, 0.4, 6), c: '#ffffff', m: M(0, 0.5, -0.52, 1, 0.35, 1, -Math.PI / 2 - 0.3, 0, 0) },
+]);
+const BIRD_WING = [0.18, 0.55, 0];
+const birdWingGeo = merge([{ geo: sph(0.5, 10, 5), c: '#ffffff', m: M(0.32, 0, -0.04, 0.68, 0.06, 0.34) }]);
+// Humain : corps (vêtements = couleur de l'âge), tête (peau + cheveux), jambes
+const humBodyGeo = merge([
+  { geo: cyl(0.16, 0.21, 0.5, 8), c: '#ffffff', m: M(0, 0.62, 0) },
+  { geo: cyl(0.055, 0.05, 0.42, 5), c: '#ffffff', m: M(-0.24, 0.6, 0, 1, 1, 1, 0, 0, 0.18) },
+  { geo: cyl(0.055, 0.05, 0.42, 5), c: '#ffffff', m: M(0.24, 0.6, 0, 1, 1, 1, 0, 0, -0.18) },
+]);
+const humHeadGeo = merge([
+  { geo: sph(0.17, 10, 8), c: '#ffffff', m: M(0, 1.0, 0) },
+  { geo: sph(0.18, 10, 6), c: '#4a3426', m: M(0, 1.06, -0.03, 1, 0.75, 1) },
+  { geo: sph(0.025, 4, 3), c: '#222222', m: M(-0.06, 1.01, 0.155) },
+  { geo: sph(0.025, 4, 3), c: '#222222', m: M(0.06, 1.01, 0.155) },
+]);
+const HUM_LEGS = [0, 0.38, 0];
+const humLegGeo = merge([[-0.09], [0.09]].map(([x]) => ({ geo: cyl(0.06, 0.05, 0.38, 5), c: '#ffffff', m: M(x, -0.19, 0) })));
+const loadGeo = merge([{ geo: new THREE.BoxGeometry(0.3, 0.22, 0.2), c: '#ffffff', m: M(0, 0.7, -0.24) }]);
+// Bâtiments
+// Toit en prisme (pointe en haut, axe = X)
+const roofGeo = (() => { const g = new THREE.CylinderGeometry(0.62, 0.62, 1.7, 3, 1); g.rotateZ(Math.PI / 2); g.rotateX(-Math.PI / 2); return g; })();
+// Voile : un triangle visible des deux côtés
+function sailGeo() {
+  const g = new THREE.BufferGeometry(), a = [0, 1.5, 0], b = [0, 0.4, 0], c = [0, 0.4, 0.75];
+  g.setAttribute('position', new THREE.Float32BufferAttribute([...a, ...b, ...c, ...a, ...c, ...b], 3)); g.computeVertexNormals(); return g;
+}
+const BGEO = {
+  cave: merge([
+    { geo: ico(1.5, 1), c: '#9ca3af', m: M(0, 0.45, 0, 1.25, 0.85, 1.1) },
+    { geo: ico(0.8, 1), c: '#b0b6bf', m: M(1.2, 0.3, -0.4, 1, 0.8, 1) },
+    { geo: ico(0.7, 1), c: '#8b929c', m: M(-1.2, 0.25, 0.2) },
+    { geo: sph(0.55, 10, 8), c: '#2b2523', m: M(0, 0.45, 1.25, 1, 1.05, 0.4) },
+  ]),
+  hut: merge([
+    { geo: cyl(0.68, 0.74, 0.62, 10), c: '#c8a77c', m: M(0, 0.31, 0) },
+    { geo: cone(0.98, 0.95, 10), c: '#e2c46a', m: M(0, 1.08, 0) },
+    { geo: new THREE.BoxGeometry(0.3, 0.42, 0.06), c: '#5b4030', m: M(0, 0.21, 0.72) },
+  ]),
+  house: merge([
+    { geo: new THREE.BoxGeometry(1.5, 0.95, 1.15), c: '#f3ead8', m: M(0, 0.47, 0) },
+    { geo: roofGeo, c: '#e0603f', m: M(0, 1.23, 0, 1, 0.9, 1.25) },
+    { geo: new THREE.BoxGeometry(0.32, 0.55, 0.06), c: '#7a4b2d', m: M(0.3, 0.28, 0.6) },
+    { geo: new THREE.BoxGeometry(0.2, 0.55, 0.2), c: '#b9a68b', m: M(-0.45, 1.45, -0.2) },
+  ]),
+  boat: merge([
+    { geo: new THREE.SphereGeometry(0.5, 12, 6, 0, 6.283, Math.PI / 2, Math.PI / 2), c: '#9a6a43', m: M(0, 0.25, 0, 0.9, 0.55, 1.9) },
+    { geo: cyl(0.04, 0.04, 1.4, 5), c: '#6b4a2e', m: M(0, 0.85, 0) },
+    { geo: sailGeo(), c: '#ffffff', m: M(0.02, 0, 0) },
+  ]),
+  factory: merge([
+    { geo: new THREE.BoxGeometry(1.9, 1.1, 1.3), c: '#9aa1ab', m: M(0, 0.55, 0) },
+    { geo: new THREE.BoxGeometry(1.95, 0.2, 1.35), c: '#6b7280', m: M(0, 1.15, 0) },
+    { geo: cyl(0.16, 0.2, 1.4, 8), c: '#c0504d', m: M(0.55, 1.7, -0.3) },
+    { geo: cyl(0.14, 0.18, 1.1, 8), c: '#e5e7eb', m: M(-0.1, 1.55, -0.3) },
+    { geo: new THREE.BoxGeometry(0.5, 0.6, 0.06), c: '#4b5563', m: M(-0.5, 0.3, 0.66) },
+  ]),
+  solar: merge([
+    ...[-0.6, 0, 0.6].map(x => ({ geo: new THREE.BoxGeometry(0.5, 0.04, 0.85), c: '#1e3a8a', m: M(x, 0.6, 0, 1, 1, 1, -0.5, 0, 0) })),
+    ...[-0.6, 0, 0.6].map(x => ({ geo: cyl(0.03, 0.03, 0.55, 4), c: '#9ca3af', m: M(x, 0.28, 0) })),
+  ]),
+};
+// Fenêtres (s'allument la nuit)
+const winGeo = { hut: null, house: merge([{ geo: new THREE.BoxGeometry(0.3, 0.26, 0.05), c: '#ffffff', m: M(-0.35, 0.55, 0.585) }, { geo: new THREE.BoxGeometry(0.05, 0.26, 0.3), c: '#ffffff', m: M(0.765, 0.55, 0) }]),
+  factory: merge([0.2, 0.7].map(x => ({ geo: new THREE.BoxGeometry(0.3, 0.3, 0.05), c: '#ffffff', m: M(x, 0.6, 0.66) }))) };
+// Champs : piquets de clôture + carrés de terre sous le blé (posés un par un sur le relief)
+const postGeo = merge([{ geo: cyl(0.045, 0.05, 0.5, 5), c: '#9a7148', m: M(0, 0.22, 0) }, { geo: new THREE.BoxGeometry(0.05, 0.05, 1.3), c: '#b08559', m: M(0, 0.34, 0.65) }]);
+const soilGeo = merge([{ geo: cyl(0.4, 0.46, 0.06, 8), c: '#a57b52', m: M(0, 0.02, 0) }]);
+const fireGeo = merge([
+  { geo: cyl(0.05, 0.05, 0.7, 5), c: '#6b4a2e', m: M(0, 0.06, 0, 1, 1, 1, Math.PI / 2, 0.6, 0) },
+  { geo: cyl(0.05, 0.05, 0.7, 5), c: '#6b4a2e', m: M(0, 0.06, 0, 1, 1, 1, Math.PI / 2, -0.6, 0) },
+  ...[0, 1, 2, 3, 4, 5].map(i => ({ geo: ico(0.09, 0), c: '#8b8f97', m: M(Math.cos(i) * 0.38, 0.04, Math.sin(i) * 0.38) })),
+]);
 const shadowTex = (() => {
   const cv = document.createElement('canvas'); cv.width = cv.height = 64;
   const g = cv.getContext('2d'), gr = g.createRadialGradient(32, 32, 0, 32, 32, 32);
@@ -1407,7 +2099,25 @@ shadowMesh.renderOrder = 1;
 // Halo lumineux autour des animaux rares et de l'Alpha
 const haloMesh = inst(ico(1, 2), new THREE.MeshBasicMaterial({ transparent: true, opacity: 0.3, depthWrite: false }), 120);
 haloMesh.renderOrder = 6;
-const PLANT_SCALE = [1.35, 1.2, 1.05], ANIMAL_SCALE = [1.35, 1.25, 1.2];
+const PLANT_SCALE = [1.35, 1.2, 1.05, 1.1], ANIMAL_SCALE = [1.35, 1.25, 1.2, 0.85, 1.05];
+plantMeshes.push(inst(wheatGeo, plantMat, 200));
+const fishMesh = inst(fishGeo, animalMat, 120);
+const birdBody = inst(birdBodyGeo, animalMat, 160), birdWings = inst(birdWingGeo, wingMat, 320);
+const humBody = inst(humBodyGeo, animalMat, 120), humHead = inst(humHeadGeo, animalMat, 120), humLegs = inst(humLegGeo, animalMat, 120), humLoad = inst(loadGeo, animalMat, 120);
+const buildMat = new THREE.MeshLambertMaterial({ vertexColors: true });
+const bMeshes = Object.fromEntries(Object.entries(BGEO).map(([k, g]) => [k, inst(g, buildMat, k === 'cave' ? 2 : 40)]));
+const winMat = new THREE.MeshBasicMaterial({ color: 0x6b7c8f });
+const winMeshes = { house: inst(winGeo.house, winMat, 40), factory: inst(winGeo.factory, winMat, 40) };
+const fireMesh = inst(fireGeo, buildMat, 1);
+const postMesh = inst(postGeo, buildMat, 120), soilMesh = inst(soilGeo, buildMat, 200);
+const flame = new THREE.Mesh(cone(0.22, 0.6, 7), new THREE.MeshBasicMaterial({ color: 0xffa23a, transparent: true, opacity: 0.9 }));
+flame.visible = false; scene.add(flame);
+// Le lac
+const waterMat = new THREE.MeshPhongMaterial({ color: 0x55b6ea, specular: 0xffffff, shininess: 90, transparent: true, opacity: 0.8, depthWrite: false });
+const water = new THREE.Mesh(new THREE.CircleGeometry(1, 72).rotateX(-Math.PI / 2), waterMat);
+water.renderOrder = 2; scene.add(water);
+let waterY = -0.55;
+function layoutWater() { const L = lakeOf(P.worldSize); water.position.set(L.x, waterY, L.z); water.scale.setScalar(L.r * 1.55); }
 
 // Sélection : anneau sous l'animal + cercle de vision
 const ringGeo = new THREE.RingGeometry(0.82, 1, 48).rotateX(-Math.PI / 2);
@@ -1425,7 +2135,7 @@ const PC = Object.fromEntries(Object.entries({
   dust: ['#d9d4c7', '#c9c3b5', '#efece5'], leaf: ['#7ed36b', '#a7e28f', '#5fbf58'], dry: ['#d9b46a', '#c79a52', '#e6cf8f'],
   oldLeaf: ['#c7d27a', '#a9c86a'], sick: ['#b28cf0', '#cdb4ff'], spark: ['#ffffff', '#c8f2b8', '#9be08a'], red: ['#ff9a7a', '#ffffff'],
   gold: ['#ffd84d', '#fff3b0', '#ffb800'], glow: ['#7cf3ff', '#d6fbff', '#5ac8fa'], fire: ['#ffb347', '#ff7a2f', '#ffe08a', '#ff5a2a'],
-  smoke: ['#8f8a85', '#b5afa8', '#6f6a66'], meat: ['#c99b84', '#e0c3b1'], purple: ['#c084fc', '#e9d5ff', '#ffffff'],
+  smoke: ['#8f8a85', '#b5afa8', '#6f6a66'], wood: ['#a47148', '#c99a6b', '#7a5233'], meat: ['#c99b84', '#e0c3b1'], purple: ['#c084fc', '#e9d5ff', '#ffffff'],
 }).map(([k, v]) => [k, v.map(h => new THREE.Color(h))]));
 function burst(x, y, z, n, pal, o = {}) {
   if (ui.lowfx) n = Math.ceil(n / 2);
@@ -1533,7 +2243,7 @@ function updateComet(dt) {
 const SICK = new THREE.Color('#b9a0ea'), GREY = new THREE.Color('#9a9a9a'), OLDLEAF = new THREE.Color(1.25, 1.0, 0.5), DRY = new THREE.Color(1.3, 1.0, 0.45);
 const GOLD = new THREE.Color('#ffcf3a'), GLOWC = new THREE.Color('#c4f8ff'), ALPHA_C = new THREE.Color('#5a2b2b');
 const HALO = { gold: new THREE.Color('#ffb800'), glow: new THREE.Color('#33e0ff'), alpha: new THREE.Color('#ff3b30') };
-const CARC_C = [new THREE.Color('#e6e2dc'), new THREE.Color('#ead0c0'), new THREE.Color('#d9d2c8')];
+const CARC_C = [new THREE.Color('#e6e2dc'), new THREE.Color('#ead0c0'), new THREE.Color('#d9d2c8'), new THREE.Color('#e8e8e8'), new THREE.Color('#e8e8e8')];
 function geneColor(c) {
   const g = c.genes, col = new THREE.Color();
   if (c.alpha) return col.copy(ALPHA_C);
@@ -1541,7 +2251,9 @@ function geneColor(c) {
   if (c.rare === 'glow') return col.copy(GLOWC);
   if (c.sp === 0) col.setHSL(clamp(0.6 - (g.speed - 1) * 0.22, 0.42, 0.75), 0.62, clamp(0.84 - (g.size - 1) * 0.06, 0.74, 0.9));
   else if (c.sp === 1) col.setHSL(clamp(0.045 - (g.speed - 1) * 0.06 + (g.vision - 1) * 0.04, -0.04, 0.11), 0.9, clamp(0.56 - (g.size - 1) * 0.08, 0.42, 0.64));
-  else col.setHSL(clamp(0.08 - (g.speed - 1) * 0.1, 0, 0.16), 0.3, clamp(0.86 - (g.size - 1) * 0.05, 0.75, 0.92));
+  else if (c.sp === 2) col.setHSL(clamp(0.08 - (g.speed - 1) * 0.1, 0, 0.16), 0.3, clamp(0.86 - (g.size - 1) * 0.05, 0.75, 0.92));
+  else if (c.sp === 3) col.setHSL(clamp(0.5 - (g.speed - 1) * 0.35 + (g.vision - 1) * 0.15, 0.08, 0.62), 0.75, clamp(0.6 - (g.size - 1) * 0.06, 0.5, 0.7));
+  else col.setHSL(0.07 + hash(c.id) * 0.03, 0.45, 0.42 + hash(c.id + 7) * 0.32); // peau
   return col;
 }
 
@@ -1571,7 +2283,8 @@ function setPart(mesh, i, piv, sx, sy, sz, rx, ry, rz, col, px = piv[0]) {
 }
 
 function updatePlants(time) {
-  const R = P.worldSize, cnt = [0, 0, 0];
+  const R = P.worldSize, cnt = [0, 0, 0, 0];
+  let ns = 0;
   for (const p of sim.plants) {
     const mesh = plantMeshes[p.type], i = cnt[p.type];
     if (i >= mesh.instanceMatrix.count) continue;
@@ -1583,14 +2296,16 @@ function updatePlants(time) {
     _d.position.set(p.x, p._y, p.z); _d.rotation.set(sway, p.rot, sway * 0.6); _d.scale.setScalar(Math.max(s, 0.001)); _d.updateMatrix();
     mesh.setMatrixAt(i, _d.matrix);
     _c.setRGB(p._v, p._v * 1.02, p._v * 0.96);
-    const life = PLANT.life * p.lifeF * (p.type === 2 ? 0.7 : 1), oldK = clamp((p.age / life - 0.7) / 0.3, 0, 1);
+    const life = PLANT.life * p.lifeF * (p.type === 2 ? 0.7 : 1), oldK = p.type === 3 ? 0 : clamp((p.age / life - 0.7) / 0.3, 0, 1);
     if (oldK > 0) _c.lerp(OLDLEAF, oldK * 0.6);
     if (p.dead && (p.cause === 'dry' || p.cause === 'burn')) _c.lerp(p.cause === 'burn' ? GREY : DRY, 0.7);
     mesh.setColorAt(i, _c);
     cnt[p.type]++;
     if (p.type === 0 && s > 0.3) addShadow(p.x, p._y, p.z, s * 1.4, s * 1.4, 0, p._sq);
+    if (p.type === 3 && ns < 200) { _d.rotation.set(0, p.rot, 0); _d.scale.setScalar(1); _d.position.y = p._y + 0.02; _d.updateMatrix(); soilMesh.setMatrixAt(ns, _d.matrix); soilMesh.setColorAt(ns++, _c.setRGB(1, 1, 1)); }
   }
   plantMeshes.forEach((m, k) => { m.count = cnt[k]; flush(m); });
+  soilMesh.count = ns; flush(soilMesh);
 }
 
 function updateCarcasses() {
@@ -1688,17 +2403,181 @@ function updateAnimals(dtR, simDt, time) {
   [herbEars, herbFeet, predEars, predLegs, scavWings, haloMesh].forEach(flush);
 }
 
+/* ---------- Lac, poissons, oiseaux, humains, village ---------- */
+const FISH_C = ['#ff9f43', '#ffc048', '#ff7a59', '#7dd3fc', '#f8fafc'].map(h => new THREE.Color(h));
+const POL_WATER = new THREE.Color('#7f8a5a'), WATER_C = new THREE.Color('#55b6ea');
+function updateWater(dtR, time) {
+  waterY += (sim.waterY() - waterY) * Math.min(1, dtR * 2);
+  const L = lakeOf(P.worldSize);
+  water.position.set(L.x, waterY + Math.sin(time * 1.3) * 0.015, L.z);
+  waterMat.color.copy(WATER_C).lerp(POL_WATER, sim.tribe.pol * 0.85);
+}
+function updateFishR(time) {
+  let n = 0;
+  for (const f of sim.fish) {
+    if (n >= 120) break;
+    let s = 0.55 * f.size * Math.min(1, 0.4 + f.age / 6);
+    if (f.dead) s *= clamp(f.dyingT / 0.5, 0, 1);
+    const wig = Math.sin(time * 9 + f.id) * 0.25;
+    _d.position.set(f.x, waterY - 0.1 - (f.dead ? (1 - f.dyingT / 0.5) * 0.3 : 0), f.z);
+    _d.rotation.set(0, Math.PI / 2 - f.a + wig, f.dead && f.cause === 'dry' ? 1.4 : 0); _d.scale.setScalar(Math.max(s, 0.001)); _d.updateMatrix();
+    fishMesh.setMatrixAt(n, _d.matrix); fishMesh.setColorAt(n, FISH_C[f.id % FISH_C.length]); n++;
+  }
+  fishMesh.count = n; flush(fishMesh);
+}
+const treeTop = p => { if (p._y === undefined) p._y = heightAt(p.x, p.z, P.worldSize) - 0.04; return p._y + 1.5 * PLANT_SCALE[0] * (0.22 + 0.78 * Math.pow(p.growth, 0.8)); };
+function updateBirdsR(dtR, time) {
+  const R = P.worldSize; let n = 0, w = 0;
+  for (const c of sim.creatures[3]) {
+    if (n >= 160) break;
+    if (c._hd === undefined) { c._hd = Math.random() * 6.283; c._col = geneColor(c); c._pulse = 0; }
+    const g = c.genes, spd = Math.hypot(c.vx, c.vz);
+    if (spd > 0.2) { let d = Math.atan2(c.vx, c.vz) - c._hd; d = Math.atan2(Math.sin(d), Math.cos(d)); c._hd += d * Math.min(1, dtR * 8); }
+    const grow = c.age < 10 ? 0.6 + 0.4 * c.age / 10 : 1;
+    let s = g.size * grow * ANIMAL_SCALE[3];
+    const yG = Math.max(heightAt(c.x, c.z, R), waterY);
+    const low = c.state === 'fish' || c.state === 'dive' ? waterY : c.perch ? treeTop(c.perch) - 0.15 : yG;
+    const flyY = Math.max(yG, waterY) + 3.2 + Math.sin(time * 1.7 + c.id) * 0.25;
+    const k = clamp(c.fly, 0, 1);
+    let y = lerp(low, flyY, k);
+    if (c.state === 'dive') y = lerp(waterY - 0.15, waterY + 1, clamp(c.timer / 0.6, 0, 1) ** 2);
+    let dk = 1;
+    if (c.dead) { dk = clamp(c.dyingT / 0.7, 0, 1); y = lerp(yG, y, dk); s *= 0.4 + 0.6 * dk; }
+    c._ry = y;
+    if (c._pulse > 0) { c._pulse = Math.max(0, c._pulse - dtR * 2.2); s *= 1 + Math.sin(c._pulse * Math.PI) * 0.2; }
+    const rx = c.state === 'dive' ? 0.9 : k * 0.12 - (c.perch && k < 0.3 ? Math.max(0, Math.sin(time * 5 + c.id)) * 0.25 : 0);
+    _d.position.set(c.x, y, c.z); _d.rotation.set(rx, c._hd, c.dead ? (1 - dk) * 1.4 : 0); _d.scale.setScalar(Math.max(s, 0.001)); _d.updateMatrix();
+    birdBody.setMatrixAt(n, _d.matrix);
+    _c.copy(c._col); if (c.infected > 0) _c.lerp(SICK, 0.6); if (c.dead) _c.lerp(GREY, (1 - dk) * 0.8);
+    birdBody.setColorAt(n, _c); n++;
+    const span = 0.55 + 0.5 * g.speed, flap = Math.sin(time * 16 + c.id) * 0.9 * Math.max(k, c.state === 'dive' ? 0.3 : 0);
+    const wry = lerp(-1.25, 0, k), wrz = lerp(0.1, flap, k), wsc = lerp(0.7, 1, k) * span;
+    setPart(birdWings, w++, BIRD_WING, wsc, 1, 1, 0, wry, wrz, _c);
+    setPart(birdWings, w++, BIRD_WING, -wsc, 1, 1, 0, -wry, -wrz, _c, -BIRD_WING[0]);
+    if (k > 0.3) addShadow(c.x, yG, c.z, s * 0.6, s * 0.6, 0);
+  }
+  birdBody.count = n; birdWings.count = w; flush(birdBody); flush(birdWings);
+}
+const ERA_CLOTH = ['#a0764f', '#c9a26b', '#4f7fd1', '#6b7280', '#4cb46a'].map(h => new THREE.Color(h));
+const PANTS = new THREE.Color('#5b4636'), LOAD_C = { food: new THREE.Color('#e9734f'), wood: new THREE.Color('#8b5e3c') };
+function updateHumansR(dtR, simDt, time) {
+  const R = P.worldSize, era = sim.tribe.era; let n = 0, nl = 0;
+  for (const c of sim.creatures[4]) {
+    if (n >= 120) break;
+    if (c._hd === undefined) { c._hd = Math.random() * 6.283; c._ph = Math.random() * 6; c._col = geneColor(c); c._pulse = 0; }
+    // La nuit, ils dorment à l'abri
+    if (c.state === 'sleep' && !c.dead) { c._ry = undefined; continue; }
+    const g = c.genes, spd = Math.hypot(c.vx, c.vz);
+    c._ph += spd * simDt * 3.2;
+    if (spd > 0.1) { let d = Math.atan2(c.vx, c.vz) - c._hd; d = Math.atan2(Math.sin(d), Math.cos(d)); c._hd += d * Math.min(1, dtR * 9); }
+    else if (c.goal && c.state === 'work') { let d = Math.atan2(c.goal.x - c.x, c.goal.z - c.z) - c._hd; d = Math.atan2(Math.sin(d), Math.cos(d)); c._hd += d * Math.min(1, dtR * 5); }
+    const grow = c.age < 20 ? 0.55 + 0.45 * c.age / 20 : 1;
+    let s = g.size * grow * ANIMAL_SCALE[4];
+    const ba = (sim.t - c.born) / 0.45; if (ba < 1) s *= easeOutBack(clamp(ba, 0, 1));
+    const yG = heightAt(c.x, c.z, R), moving = clamp(spd / 1, 0, 1);
+    let rx = 0, rz = 0, y = yG + Math.abs(Math.sin(c._ph)) * 0.05 * moving * s;
+    if (c.state === 'work') { rx = 0.25 + Math.sin(time * 10 + c.id) * 0.2; }
+    if (c.state === 'fight') rx = 0.2;
+    if (c.state === 'stun') rz = Math.sin(time * 30) * 0.1;
+    let dk = 1;
+    if (c.dead) { dk = clamp(c.dyingT / 0.7, 0, 1); rx = (1 - dk) * 1.4; s *= 0.5 + 0.5 * dk; }
+    if (c._pulse > 0) { c._pulse = Math.max(0, c._pulse - dtR * 2.2); s *= 1 + Math.sin(c._pulse * Math.PI) * 0.15; }
+    c._ry = y;
+    _d.position.set(c.x, y, c.z); _d.rotation.set(rx, c._hd, rz); _d.scale.setScalar(Math.max(s, 0.001)); _d.updateMatrix();
+    _c.copy(ERA_CLOTH[era]); if (c.infected > 0) _c.lerp(SICK, 0.6); if (c.dead) _c.lerp(GREY, (1 - dk) * 0.8);
+    humBody.setMatrixAt(n, _d.matrix); humBody.setColorAt(n, _c);
+    _c.copy(c._col); if (c.dead) _c.lerp(GREY, (1 - dk) * 0.8);
+    humHead.setMatrixAt(n, _d.matrix); humHead.setColorAt(n, _c);
+    setPart(humLegs, n, HUM_LEGS, 1, 1, 1, Math.sin(c._ph) * 0.55 * moving, 0, 0, PANTS);
+    if (c.load > 0 && !c.dead) { humLoad.setMatrixAt(nl, _d.matrix); humLoad.setColorAt(nl++, LOAD_C[c.loadType] || LOAD_C.food); }
+    n++;
+    addShadow(c.x, yG, c.z, s * 0.75, s * 0.75, 0);
+  }
+  humBody.count = humHead.count = humLegs.count = n; humLoad.count = nl;
+  [humBody, humHead, humLegs, humLoad].forEach(flush);
+}
+const BUILD_PALE = new THREE.Color('#f4eee0'), WIN_DAY = new THREE.Color('#6b7c8f'), WIN_NIGHT = new THREE.Color('#ffd36b');
+let smokeT = 0;
+function updateBuildingsR(dtR, time) {
+  const R = P.worldSize, T = sim.tribe, cnt = {}, wcnt = { house: 0, factory: 0 }, night = 1 - daylight;
+  for (const k in bMeshes) cnt[k] = 0;
+  smokeT += dtR;
+  const puff = smokeT > 0.25; if (puff) smokeT = 0;
+  let np = 0;
+  for (const b of T.buildings) {
+    if (b.type === 'farm') {
+      const k = b.dead ? clamp(b.dyingT, 0, 1) : clamp((sim.t - (b._born ?? (b._born = sim.t))) / 0.6, 0, 1);
+      for (let j = 0; j < 12 && np < 120; j++) {
+        const a = j / 12 * 6.283 + b.rot, x = b.x + Math.cos(a) * (FARM_R + 0.2), z = b.z + Math.sin(a) * (FARM_R + 0.2);
+        _d.position.set(x, heightAt(x, z, R) - 0.03, z); _d.rotation.set(0, -a, 0); _d.scale.set(1, k, 1); _d.updateMatrix();
+        postMesh.setMatrixAt(np, _d.matrix); postMesh.setColorAt(np++, _c.setRGB(1, 1, 1));
+      }
+      continue;
+    }
+    const mesh = bMeshes[b.type], i = cnt[b.type];
+    if (!mesh || i >= mesh.instanceMatrix.count) continue;
+    if (b._y === undefined || b._px !== b.x) {
+      b._px = b.x;
+      // Posé au plus bas des 4 coins pour ne pas flotter
+      let y = heightAt(b.x, b.z, R);
+      if (b.type !== 'boat') for (const [dx, dz] of [[0.6, 0], [-0.6, 0], [0, 0.6], [0, -0.6]]) y = Math.min(y, heightAt(b.x + dx * b.size, b.z + dz * b.size, R));
+      b._y = y - 0.05;
+      b._rot = b.type === 'cave' || b.type === 'house' || b.type === 'hut' || b.type === 'factory' ? Math.atan2(T.x - b.x, T.z - b.z) : b.rot;
+      if (b.type === 'boat') b._rot = Math.atan2(b.sx - b.x, b.sz - b.z) + Math.PI / 2;
+    }
+    let sy = b.type === 'farm' ? 1 : 0.2 + 0.8 * b.prog, sc = 1;
+    if (b.dead) sc = clamp(b.dyingT, 0, 1);
+    const ba = (sim.t - (b._born ?? (b._born = sim.t))) / 0.5; if (ba < 1) sc *= easeOutBack(clamp(ba, 0, 1));
+    let y = b._y, rz = 0;
+    if (b.type === 'boat') {
+      // Le bateau flotte et part pêcher quand quelqu'un est au ponton
+      y = waterY - 0.12 + Math.sin(time * 1.6 + b.id) * 0.05; rz = Math.sin(time * 1.2) * 0.05;
+    }
+    _d.position.set(b.x, y, b.z); _d.rotation.set(0, b._rot, rz); _d.scale.set(sc, sc * sy, sc); _d.updateMatrix();
+    mesh.setMatrixAt(i, _d.matrix);
+    _c.setRGB(1, 1, 1);
+    if (b.prog < 1 && b.type !== 'farm') _c.copy(BUILD_PALE);
+    if (b.type === 'factory' && T.era >= 4) _c.setRGB(0.8, 0.85, 0.8);
+    mesh.setColorAt(i, _c); cnt[b.type]++;
+    if (winMeshes[b.type] && b.prog >= 1 && !b.dead) {
+      const wm = winMeshes[b.type]; wm.setMatrixAt(wcnt[b.type]++, _d.matrix);
+    }
+    // Fumée des usines (plus sombre quand la pollution monte)
+    if (b.type === 'factory' && b.prog >= 1 && !b.dead && puff) {
+      _v.set(0.55, 2.45, -0.3).applyAxisAngle(UP, b._rot);
+      burst(b.x + _v.x, y + _v.y, b.z + _v.z, 1, PC.smoke, { speed: 0.3, up: 1.4, size: 0.32, life: 2.6, g: -0.35 });
+    }
+    if (b.type === 'solar' && Math.random() < dtR * 0.4 * daylight) burst(b.x, y + 0.7, b.z, 1, PC.glow, { speed: 0.2, up: 0.8, size: 0.05, life: 0.8, g: -0.2 });
+  }
+  for (const k in bMeshes) { bMeshes[k].count = cnt[k]; flush(bMeshes[k]); }
+  for (const k in winMeshes) { winMeshes[k].count = wcnt[k]; flush(winMeshes[k]); }
+  postMesh.count = np; flush(postMesh);
+  winMat.color.copy(WIN_DAY).lerp(WIN_NIGHT, clamp(night * 1.6 - 0.3, 0, 1));
+  // Le feu de camp du village (tant qu'il n'y a pas l'électricité)
+  const fireOn = T.era < 3 && sim.lastAlive[4] > 0;
+  fireMesh.count = fireOn ? 1 : 0;
+  flame.visible = fireOn;
+  if (fireOn) {
+    const fy = heightAt(T.x, T.z, R);
+    _d.position.set(T.x, fy, T.z); _d.rotation.set(0, 0, 0); _d.scale.setScalar(1); _d.updateMatrix(); fireMesh.setMatrixAt(0, _d.matrix); fireMesh.setColorAt(0, _c.setRGB(1, 1, 1)); flush(fireMesh);
+    const fl = 0.85 + Math.sin(time * 13) * 0.12 + Math.sin(time * 7.3) * 0.08;
+    flame.position.set(T.x, fy + 0.32 * fl, T.z); flame.scale.set(fl, fl * (1 + night * 0.4), fl);
+    if (Math.random() < dtR * (2 + 6 * night)) burst(T.x, fy + 0.5, T.z, 1, PC.fire, { speed: 0.3, up: 1.6, size: 0.06, life: 0.7, g: -0.6 });
+  }
+}
+
 /* ---------- Ciel, lumière, jour / nuit, ambiance des catastrophes ---------- */
 const SKY = {
   day: ['#b4d7f3', '#e4edf1', '#f5f3ed'], dusk: ['#a9b9e0', '#f3d6c8', '#f2e6dc'],
   night: ['#2a3a66', '#4a5d92', '#6274a3'], rain: ['#aeb9c6', '#cfd7de', '#dfe3e3'], dry: ['#c4d4e4', '#efe6d4', '#f3ecdf'],
-  snow: ['#c9d6e6', '#e8eef4', '#f4f6f8'],
+  snow: ['#c9d6e6', '#e8eef4', '#f4f6f8'], smog: ['#9c9481', '#c4b99c', '#d6cdb5'],
 };
 for (const k in SKY) SKY[k] = SKY[k].map(h => new THREE.Color(h));
 const HEMI_DAY = new THREE.Color(0xeaf3ff), HEMI_NIGHT = new THREE.Color(0x8796cc), GROUND_DAY = new THREE.Color(0xbcd3a4), GROUND_NIGHT = new THREE.Color(0x56675f);
 const SUN_DAY = new THREE.Color(0xfff2df), SUN_DUSK = new THREE.Color(0xffc49a), MOON = new THREE.Color(0xb4c2ff);
 const WHITE = new THREE.Color(1, 1, 1), TOP_DRY = new THREE.Color(1.2, 1.02, 0.62), TOP_WET = new THREE.Color(0.9, 1.03, 0.95);
-let daylight = 1;
+let daylight = 1, polK = 0;
+const SMOG_TOP = new THREE.Color(1.05, 1.0, 0.78);
 function updateAmbience(dt) {
   const target = sim.daylight();
   daylight += (target - daylight) * Math.min(1, dt * 3);
@@ -1707,8 +2586,9 @@ function updateAmbience(dt) {
   fxAmt.rain += ((cat === 'rain' ? 1 : 0) - fxAmt.rain) * k;
   fxAmt.drought += ((cat === 'drought' ? 1 : 0) - fxAmt.drought) * k;
   fxAmt.snow += ((cat === 'winter' ? 1 : 0) - fxAmt.snow) * k * 0.6;
+  polK += (sim.tribe.pol - polK) * k;
   for (let i = 0; i < 3; i++) {
-    _c.copy(SKY.night[i]).lerp(SKY.day[i], dl).lerp(SKY.dusk[i], dusk * 0.65).lerp(SKY.rain[i], fxAmt.rain * 0.7).lerp(SKY.dry[i], fxAmt.drought * 0.5).lerp(SKY.snow[i], fxAmt.snow * 0.6);
+    _c.copy(SKY.night[i]).lerp(SKY.day[i], dl).lerp(SKY.dusk[i], dusk * 0.65).lerp(SKY.rain[i], fxAmt.rain * 0.7).lerp(SKY.dry[i], fxAmt.drought * 0.5).lerp(SKY.snow[i], fxAmt.snow * 0.6).lerp(SKY.smog[i], polK * 0.7 * (0.4 + 0.6 * dl));
     skyU[['top', 'mid', 'bot'][i]].value.copy(_c);
   }
   const phase = sim.dayPhase() * 6.283;
@@ -1719,11 +2599,11 @@ function updateAmbience(dt) {
   hemi.color.copy(HEMI_NIGHT).lerp(HEMI_DAY, dl); hemi.groundColor.copy(GROUND_NIGHT).lerp(GROUND_DAY, dl);
   stars.material.opacity = clamp((0.4 - dl) * 2.5, 0, 0.9) * (1 - fxAmt.rain);
   cloudMat.emissive.setRGB(0.25 + 0.3 * dl, 0.28 + 0.31 * dl, 0.32 + 0.32 * dl);
-  topMat.color.copy(WHITE).lerp(TOP_DRY, fxAmt.drought).lerp(TOP_WET, fxAmt.rain);
+  topMat.color.copy(WHITE).lerp(TOP_DRY, fxAmt.drought).lerp(TOP_WET, fxAmt.rain).lerp(SMOG_TOP, polK * 0.6);
   // La neige blanchit le sol et les plantes
   topMat.emissive.setRGB(0.36, 0.39, 0.44).multiplyScalar(fxAmt.snow * 0.9);
   plantMat.emissive.setRGB(0.25, 0.28, 0.32).multiplyScalar(fxAmt.snow * 0.8);
-  plantMat.color.copy(WHITE).lerp(DRY, fxAmt.drought * 0.75);
+  plantMat.color.copy(WHITE).lerp(DRY, Math.min(1, fxAmt.drought * 0.75 + polK * 0.45));
   renderer.setClearColor(skyU.mid.value, 1);
 }
 
@@ -1743,10 +2623,11 @@ function goHome(animate = true) {
   if (!animate) { camera.position.copy(h.pos); controls.target.copy(h.target); controls.update(); return; }
   camAnim = { t: 0, dur: 0.9, p0: camera.position.clone(), t0: controls.target.clone(), p1: h.pos, t1: h.target };
 }
+// Hauteur affichée d'un être vivant (les oiseaux volent ou sont perchés)
+const bodyY = c => c.sp >= 3 && c._ry !== undefined ? c._ry + 0.3 : heightAt(c.x, c.z, P.worldSize) + 0.4 + (c._fly || 0) * 1.4;
 // Suit doucement un animal (sélection ou caméra documentaire)
 function followCam(c, dtR, wantDist) {
-  const R = P.worldSize;
-  _v.set(c.x, heightAt(c.x, c.z, R) + 0.4 + (c._fly || 0) * 1.4, c.z);
+  _v.set(c.x, bodyY(c), c.z);
   _v2.subVectors(_v, controls.target).multiplyScalar(1 - Math.exp(-dtR * 5));
   controls.target.add(_v2); camera.position.add(_v2);
   if (wantDist) {
@@ -1763,7 +2644,7 @@ function focusOn(x, z, dist = 34) {
 }
 function docPick() {
   const all = [];
-  for (const arr of sim.creatures) for (const c of arr) if (!c.dead && c !== doc.subject) all.push(c);
+  for (const arr of sim.creatures) for (const c of arr) if (!c.dead && c !== doc.subject && c.state !== 'sleep') all.push(c);
   if (!all.length) return null;
   const score = c => (c.alpha ? 8 : 0) + (c.rare ? 5 : 0) + (c.fav ? 4 : 0) + (c.sprint ? 6 : 0) + (c.state === 'hunt' ? 3 : 0) + (c.state === 'flee' ? 2.5 : 0) + (c.state === 'eat' ? 1.5 : 0) + (c._fly > 0.5 ? 2 : 0) + Math.random() * 3;
   let best = all[0], bs = -1;
@@ -1812,14 +2693,22 @@ function select(c) {
   $('card').classList.remove('off'); updateCard(); hideHint(); sfx('ui');
 }
 function deselect() { selected = null; $('card').classList.add('off'); selRing.visible = visRing.visible = false; }
-const STATE_TXT = { wander: 'se promène', seek: 'cherche à manger', eat: 'mange', flee: 'fuit !', hunt: 'chasse', digest: 'digère', stun: 'a raté sa proie', rest: 'se repose' };
-const DEATH_TXT = { starve: 'mort de faim', old: 'mort de vieillesse', eaten: 'mangé par un prédateur', sick: 'mort de maladie', comet: 'touché par la comète', left: 'reparti' };
+const STATE_TXT = { wander: 'se promène', seek: 'cherche à manger', eat: 'mange', flee: 'fuit !', hunt: 'chasse', digest: 'digère', stun: 'a raté sa proie', rest: 'se repose',
+  perch: 'perché dans un arbre', fly: 'vole vers un arbre', fish: 'repère un poisson', dive: 'plonge !', sleep: 'dort', fight: 'combat un prédateur !' };
+const DEATH_TXT = { starve: 'mort de faim', old: 'mort de vieillesse', eaten: 'mangé par un prédateur', sick: 'mort de maladie', comet: 'touché par la comète', left: 'reparti', hunted: 'chassé par les humains' };
+const JOB_TXT = { gather: ['va cueillir des baies', 'cueille des baies'], harvest: ['va au champ', 'moissonne le blé'], wood: ['va couper du bois', 'coupe un arbre'], fish: ['va pêcher', 'pêche'],
+  build: ['va construire', 'construit'], deposit: ['rapporte au village', 'range les réserves'], home: ['rentre dormir', 'dort'], idle: ['flâne au village', 'discute au village'] };
 function stateText(c) {
   if (c.dead) return '† ' + DEATH_TXT[c.cause];
   let st = c.state === 'hunt' && !c.sprint ? 'traque une proie' : STATE_TXT[c.state] || c.state;
   if (c.sp === 2 && c.state === 'seek') st = 'vole vers une charogne';
   if (c.sp === 2 && c.state === 'eat') st = 'mange une charogne';
   if (c.alpha && c.state === 'hunt') st = 'chasse un prédateur !';
+  if (c.sp === 4 && (c.state === 'go' || c.state === 'work') && JOB_TXT[c.job]) st = JOB_TXT[c.job][c.state === 'go' ? 0 : 1];
+  if (c.sp === 4 && c.state === 'hunt') st = 'chasse un herbivore';
+  if (c.sp === 4 && c.load > 0 && c.state === 'go' && c.job === 'deposit') st = c.loadType === 'wood' ? 'rapporte du bois' : 'rapporte à manger';
+  if (c.sp === 3 && c.state === 'perch' && c.perch === c.home) st = 'au nid';
+  if (c.sp === 3 && c.state === 'wander') st = 'vole';
   if (c.infected > 0) st += ' · malade';
   return st;
 }
@@ -1828,11 +2717,12 @@ function updateCard() {
   const S = SPECIES[c.sp];
   $('cAvatar').style.background = c._col ? c._col.getStyle() : SPM[c.sp].color;
   $('cAvatar').className = 'avatar' + (c.sp === 1 ? ' pred' : '');
+  if (c.sp === 4) $('cAvatar').style.background = ERA_CLOTH[sim.tribe.era].getStyle();
   $('cTitle').textContent = (c.fav ? '⭐ ' : '') + c.name;
   const tag = c.alpha ? '<span class="tag alpha">🐺 Super-prédateur</span>' : c.rare ? `<span class="tag ${c.rare}">${RARE_TXT[c.rare][0]}</span>` : '';
   if ($('cTag').innerHTML !== tag) $('cTag').innerHTML = tag;
-  $('cSub').textContent = `${SPM[c.sp].emo} ${S.name} · gén. ${c.gen}${c.sp === 1 ? ` · ${c.kills} proie${c.kills > 1 ? 's' : ''}` : ''} · ${stateText(c)}`;
-  $('cAge').textContent = c.alpha ? `${Math.ceil(Math.max(0, c.alphaT))} s` : `${Math.floor(c.age)} / ${Math.round(P[S.life] * c.lifeF)} s`;
+  $('cSub').textContent = `${SPM[c.sp].emo} ${S.name} · gén. ${c.gen}${c.sp === 1 || (c.sp === 4 && c.kills) ? ` · ${c.kills} proie${c.kills > 1 ? 's' : ''}` : ''}${c.sp === 4 ? ' · ' + ERA[sim.tribe.era].emo : ''} · ${stateText(c)}`;
+  $('cAge').textContent = c.alpha ? `${Math.ceil(Math.max(0, c.alphaT))} s` : `${Math.floor(c.age)} / ${Math.round(P[S.life] * c.lifeF * (c.sp === 4 ? 1 + 0.15 * sim.tribe.era : 1))} s`;
   $('cKids').textContent = c.kids;
   const maxE = P[S.repro] * COST.maxE[c.sp], e = c.dead ? 0 : Math.max(0, c.energy);
   $('cEnergy').textContent = c.dead ? '—' : c.alpha ? '∞' : `${Math.round(e)} / ${Math.round(maxE)}`;
@@ -1847,16 +2737,16 @@ function updateCard() {
 function updateSelection(time) {
   const c = selected;
   if (!c) return;
-  const R = P.worldSize, y = heightAt(c.x, c.z, R);
+  const R = P.worldSize, y = c.sp === 3 ? Math.max(heightAt(c.x, c.z, R), waterY) : heightAt(c.x, c.z, R);
   const s = c.genes.size * ANIMAL_SCALE[c.sp] * (c.sp === 1 ? 1.1 : 0.85);
-  selRing.visible = true; selRing.position.set(c.x, y + 0.07, c.z); selRing.scale.setScalar(s * (1 + Math.sin(time * 5) * 0.06));
+  selRing.visible = !(c.sp === 4 && c.state === 'sleep'); selRing.position.set(c.x, y + 0.07, c.z); selRing.scale.setScalar(s * (1 + Math.sin(time * 5) * 0.06));
   const vis = P[SPECIES[c.sp].vision] * c.genes.vision;
   visRing.visible = !c.dead; visRing.position.set(c.x, y + 0.1, c.z); visRing.scale.setScalar(vis);
 }
 $('cName').addEventListener('click', () => {
   const c = selected; if (!c || c.alpha) return;
   let v = null;
-  try { v = prompt('Donne un nom à cet animal :', c.name); } catch (e) { v = null; }
+  try { v = prompt(c.sp === 4 ? 'Donne un nom à cet humain :' : 'Donne un nom à cet animal :', c.name); } catch (e) { v = null; }
   if (v == null) return;
   v = v.replace(/[<>]/g, '').trim().slice(0, 18);
   if (!v) return;
@@ -1880,7 +2770,8 @@ function pickAnimal(cx, cy) {
   let best = null, bd = Infinity;
   for (const arr of sim.creatures) for (const c of arr) {
     if (c.dead) continue;
-    _v.set(c.x, heightAt(c.x, c.z, R) + 0.45 * c.genes.size + (c._fly || 0) * 1.4, c.z);
+    if (c.sp === 4 && c.state === 'sleep') continue;
+    _v.set(c.x, c.sp >= 3 ? bodyY(c) : heightAt(c.x, c.z, R) + 0.45 * c.genes.size + (c._fly || 0) * 1.4, c.z);
     const dist = _v.distanceTo(camera.position);
     _v.project(camera); if (_v.z > 1) continue;
     const sx = r.left + (_v.x + 1) / 2 * r.width, sy = r.top + (1 - _v.y) / 2 * r.height;
@@ -1971,7 +2862,7 @@ function noiseHit(dur, vol, freq, type = 'lowpass', delay = 0) {
   g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
   s.connect(f).connect(g).connect(audio.master); s.start(t, Math.random()); s.stop(t + dur + 0.05);
 }
-const SFX_GAP = { pop: 90, eat: 140, death: 160, kill: 150, scav: 200 };
+const SFX_GAP = { pop: 90, eat: 140, death: 160, kill: 150, scav: 200, splash: 200, tweet: 400, build: 300 };
 function sfx(name, x, z) {
   if (!audio.on || !audio.ctx || audio.ctx.state !== 'running' || document.hidden) return;
   let vol = 1;
@@ -2002,6 +2893,10 @@ function sfx(name, x, z) {
       case 'alpha': tone(98, 0.7, 'sawtooth', 0.07, 0.75); tone(147, 0.7, 'sawtooth', 0.05, 0.75, 0.05); break;
       case 'shutter': noiseHit(0.08, 0.15, 3000, 'highpass'); noiseHit(0.06, 0.1, 2000, 'highpass', 0.09); break;
       case 'event': [660, 880].forEach((f, i) => tone(f, 0.18, 'sine', 0.08, 1, i * 0.1)); break;
+      case 'era': [392, 523, 659, 784, 1047].forEach((f, i) => tone(f, 0.35, 'triangle', 0.09, 1, i * 0.11)); break;
+      case 'build': [0, 0.12, 0.24].forEach(d => noiseHit(0.05, 0.08 * vol, 700, 'bandpass', d)); break;
+      case 'splash': noiseHit(0.18, 0.08 * vol, 1400, 'highpass'); break;
+      case 'tweet': tone(2200 + Math.random() * 600, 0.07, 'sine', 0.04 * vol, 1.3); tone(2600, 0.06, 'sine', 0.03 * vol, 1.2, 0.09); break;
     }
   } catch (e) { /* audio indisponible */ }
 }
@@ -2042,14 +2937,36 @@ function handleEvents() {
         sfx('death', e.x, e.z);
         if (selected && selected.id === e.id) onSelectedDeath();
         if (ui.favs.has(e.id)) { log('🕊️', `${e.name} est ${DEATH_TXT[e.cause]}…`, null); toast(`🕊️ ${e.name} est ${DEATH_TXT[e.cause]}`); }
+        if (e.sp === 4 && e.cause === 'eaten') log('🦊', `${e.name}, un humain isolé, a été attaqué par un prédateur.`, null);
         break;
       }
-      case 'kill': sfx('kill', e.x, e.z); break;
+      case 'era': {
+        const er = ERA[e.era];
+        toast(`${er.emo} ${er.name} !`); log(er.emo, `Les humains entrent dans l’${er.name} : ${er.txt}`);
+        burst(e.x, y + 1, e.z, 26, PC.gold, { speed: 2.4, up: 4, size: 0.12, life: 1.4, g: 2 }); ripple(e.x, e.z, '#f5b400', 6, 1.4);
+        sfx('era'); buzz([30, 40, 30]); bumpRecord('era', e.era, er.name); if (chal) chal.era = Math.max(chal.era || 0, e.era);
+        break;
+      }
+      case 'build': burst(e.x, y, e.z, 6, PC.dust, { speed: 1, up: 1.5, size: 0.1, g: 3 }); break;
+      case 'built': {
+        const nm = BUILD[e.what].name;
+        burst(e.x, y + 0.5, e.z, 10, PC.spark, { speed: 1.4, up: 2.5, size: 0.08, life: 0.9 }); sfx('build', e.x, e.z);
+        if (e.what !== 'farm' || Math.random() < 0.5) log('🔨', `Les humains ont construit : ${nm.toLowerCase()}.`);
+        break;
+      }
+      case 'destroyed': burst(e.x, y, e.z, 12, PC.smoke, { speed: 1.2, up: 2, size: 0.3, life: 1.8, g: -0.5 }); log('💥', `La comète a détruit : ${BUILD[e.what].name.toLowerCase()}.`); break;
+      case 'smog': if (e.pol > 0.45) { toast('🏭 La pollution grimpe : plantes et poissons souffrent'); log('🏭', `Pollution à ${Math.round(e.pol * 100)} % : les plantes poussent moins vite et les poissons meurent.`); } break;
+      case 'catch': burst(e.x, waterY + 0.1, e.z, 6, PC.glow, { speed: 1.2, up: 2.2, size: 0.07, life: 0.7, g: 5 }); sfx('splash', e.x, e.z); break;
+      case 'seed': if (Math.random() < 0.3) sfx('tweet', e.x, e.z); break;
+      case 'fishDeath': if (e.cause === 'dry' || e.cause === 'pol') burst(e.x, waterY + 0.1, e.z, 3, PC.soul, { speed: 0.4, up: 1, size: 0.06, life: 1, g: -0.4 }); break;
+      case 'kill': sfx('kill', e.x, e.z); if (e.human && e.prey === 1) log('🗡️', 'Les humains ont repoussé un prédateur !'); break;
       case 'eat': burst(e.x, y - 0.1, e.z, 5, PC.leaf, { speed: 1.5, up: 2.2, size: 0.08, life: 0.7 }); sfx('eat', e.x, e.z); break;
       case 'scavEat': if (Math.random() < 0.5) burst(e.x, y - 0.3, e.z, 2, PC.meat, { speed: 1, up: 1.5, size: 0.06, life: 0.5 }); sfx('scav', e.x, e.z); break;
       case 'plantDeath':
         if (e.cause === 'burn') burst(e.x, y, e.z, 4, PC.smoke, { speed: 0.6, up: 2, size: 0.18, life: 1.6, g: -0.8 });
-        else if (e.cause !== 'eaten') burst(e.x, y - 0.1, e.z, 3, e.cause === 'dry' ? PC.dry : PC.oldLeaf, { speed: 0.8, up: 1.2, size: 0.07, life: 0.9, g: 3 });
+        else if (e.cause === 'cut') burst(e.x, y + 0.3, e.z, 5, PC.wood, { speed: 1.2, up: 2, size: 0.08, life: 0.8, g: 5 });
+        else if (e.cause === 'flood') burst(e.x, y, e.z, 3, PC.glow, { speed: 0.6, up: 1, size: 0.06, life: 0.8, g: 3 });
+        else if (e.cause !== 'eaten' && e.cause !== 'picked') burst(e.x, y - 0.1, e.z, 3, e.cause === 'dry' ? PC.dry : PC.oldLeaf, { speed: 0.8, up: 1.2, size: 0.07, life: 0.9, g: 3 });
         break;
       case 'miss': burst(e.x, y - 0.3, e.z, 4, PC.dust, { speed: 1.6, up: 1, size: 0.08, g: 4 }); break;
       case 'food': ripple(e.x, e.z, '#34c759', 3.4); burst(e.x, y, e.z, 10, PC.spark, { speed: 1.6, up: 3, size: 0.08, life: 0.9 }); break;
@@ -2057,7 +2974,7 @@ function handleEvents() {
       case 'infect': burst(e.x, y + 0.4, e.z, 2, PC.sick, { speed: 0.4, up: 1, size: 0.06, life: 1, g: -0.4 }); break;
       case 'cat': { const [em, nm] = CAT_INFO[e.cat]; toast(`${em} ${nm} !`); log(em, `${nm} sur l’île !`); sfx('event'); break; }
       case 'catEnd': { const [em, nm] = CAT_INFO[e.cat]; toast(`${em} Fin : ${nm.toLowerCase()}`); if (chal) chal.pend.push(sim.t + 20); break; }
-      case 'immigrate': toast(`${SPM[e.sp].emo} Des ${SPM[e.sp].label.toLowerCase()} arrivent de l’extérieur`); log(SPM[e.sp].emo, `Des ${SPM[e.sp].label.toLowerCase()} sont revenus sur l’île.`); break;
+      case 'immigrate': toast(`${spm(e.sp).emo} Des ${spm(e.sp).label.toLowerCase()} arrivent de l’extérieur`); log(spm(e.sp).emo, `Des ${spm(e.sp).label.toLowerCase()} sont revenus sur l’île.`); break;
       case 'rare': {
         const [lab, adj] = RARE_TXT[e.kind];
         toast(`✨ Mutation rare : ${e.name} est né ${adj} !`); log('✨', `Mutation rare : ${e.name} (${SPM[e.sp].one}) est né ${adj} !`, e.id);
@@ -2095,6 +3012,48 @@ function onSelectedDeath() {
   deathTimer = setTimeout(() => { if (selected === who) deselect(); }, 2600);
 }
 
+/* ---------- Civilisation : pastille + panneau qui explique les liens entre tout ---------- */
+function updateCivPill(c) {
+  const T = sim.tribe, er = ERA[T.era], nx = ERA[T.era + 1];
+  const k = nx ? clamp((T.know - er.need) / (nx.need - er.need), 0, 1) : 1;
+  const pol = T.pol > 0.05 ? `<i>· 💨 ${Math.round(T.pol * 100)} %</i>` : '';
+  const short = er.name.replace(/^Âge (des |de l’)?/, ''), nm = short[0].toUpperCase() + short.slice(1);
+  const html = `${er.emo} ${nm}<span class="bar"><i style="width:${Math.round(k * 100)}%"></i></span><i>🍖 ${Math.floor(T.food)} · 🪵 ${Math.floor(T.wood)} · 🏠 ${c.hum}/${sim.housing()}</i>${pol}`;
+  const p = $('civPill');
+  if (p.innerHTML !== html) p.innerHTML = html;
+  p.classList.toggle('pol', T.pol > 0.3);
+  if ($('panel').dataset.kind === 'civ' && $('panel').classList.contains('open') && (civT = (civT + 1) % 4) === 0) openCiv(true);
+}
+let civT = 0;
+function openCiv(refresh) {
+  const T = sim.tribe, c = sim.counts(), er = ERA[T.era], nx = ERA[T.era + 1];
+  const cb = t => sim.countB(t);
+  const meter = (v, col) => `<div class="meter"><i style="width:${clamp(v, 0, 100)}%;background:${col}"></i></div>`;
+  const nextTxt = nx ? `Prochain : <b>${nx.emo} ${nx.name}</b> — savoir ${Math.floor(T.know)} / ${nx.need}${T.era + 1 === 4 && P.respect < 0.5 ? ' · ⚠️ il faut un respect de la nature ≥ 50 % (réglages Humains)' : ''}` : 'Ils ont atteint le dernier âge !';
+  const html = `<p class="note">${er.emo} <b>${er.name}</b> · ${er.txt}</p>
+  <div class="era-line">${ERA.map((x, i) => `<div class="${i <= T.era ? 'on' : ''} ${i === T.era ? 'now' : ''}"><b>${x.emo}</b>${x.name.replace('Âge ', '').replace('des ', '').replace('de l’', '')}</div>`).join('')}</div>
+  <p class="note" style="margin-bottom:2px">${nextTxt}</p>${meter(nx ? (T.know - er.need) / (nx.need - er.need) * 100 : 100, 'var(--plant)')}
+  <div class="civ-grid">
+    <div><b>${c.hum}</b>humains</div><div><b>${Math.floor(T.food)}</b>🍖 nourriture</div><div><b>${Math.floor(T.wood)}</b>🪵 bois</div>
+    <div><b>${sim.housing()}</b>🏠 places</div><div><b>${cb('farm')}</b>🌾 champs</div><div><b>${cb('factory') + cb('solar')}</b>${T.era >= 4 ? '☀️ solaire' : '🏭 usines'}</div>
+  </div>
+  <p class="note" style="margin-bottom:2px">🏭 Pollution : <b>${Math.round(T.pol * 100)} %</b> · 💧 Lac : <b>${Math.round(sim.water * 100)} %</b></p>${meter(T.pol * 100, '#8d7b68')}${meter(sim.water / 1.25 * 100, '#38bdf8')}
+  <p class="note" style="margin:10px 0 0"><b>🔗 Tout est lié :</b></p>
+  <ul class="links">
+    <li>🌧️ La <b>pluie</b> remplit le lac, ☀️ la <b>sécheresse</b> le vide : moins d’eau = moins de 🐟 poissons.</li>
+    <li>💧 Les plantes poussent <b>mieux près de l’eau</b> et résistent mieux à la sécheresse.</li>
+    <li>🐦 Les oiseaux <b>nichent dans les arbres</b> et mangent leurs fruits ; en volant d’arbre en arbre, ils <b>sèment de nouvelles forêts</b>. Ils pêchent aussi.</li>
+    <li>🐰 Les herbivores mangent les jeunes arbres et <b>pillent les champs de blé</b>.</li>
+    <li>🧑 Les humains cueillent, chassent 🐰, pêchent 🐟 et coupent les 🌳 : avec un <b>respect de la nature</b> élevé, ils épargnent les espèces rares et replantent.</li>
+    <li>🦊 Les prédateurs attaquent les humains isolés… jusqu’à ce qu’ils aient des armes (âge agricole).</li>
+    <li>🏭 Les usines accélèrent le progrès mais <b>polluent</b> : plantes plus lentes, poissons qui meurent, animaux affaiblis. Les 🌳 arbres et le ☀️ solaire nettoient l’air.</li>
+    <li>❄️ En hiver, la tribu brûle du bois pour se chauffer. ☄️ Une comète peut détruire des maisons.</li>
+  </ul>`;
+  if (refresh) { const b = $('panelBody'), st = b.scrollTop; b.innerHTML = html; b.scrollTop = st; return; }
+  openPanel('civ', '🏛️ Civilisation', html);
+}
+$('civPill').addEventListener('click', () => { ensureAudio(); sfx('ui'); openCiv(); });
+
 /* ---------- Journal des évènements ---------- */
 const journal = [];
 let unread = 0;
@@ -2119,6 +3078,8 @@ const REC_DEF = [
   { id: 'hunter', emo: '🦊', l: 'Meilleur chasseur', f: v => v + ' proies' },
   { id: 'pop', emo: '👥', l: 'Population record', s: 'animaux vivants en même temps', f: v => v },
   { id: 'rare', emo: '✨', l: 'Mutations rares observées', s: 'au total', f: v => v },
+  { id: 'era', emo: '🏛️', l: 'Civilisation la plus avancée', f: v => ERA[v] ? ERA[v].emo + ' ' + ERA[v].name : v },
+  { id: 'humans', emo: '🧑', l: 'Plus grand village', s: 'humains en même temps', f: v => v },
 ];
 const records = storeGet('records') || {};
 let recDirty = false, surviveStart = 0;
@@ -2144,19 +3105,20 @@ function checkRecords(cnt) {
   let gen = 0, big = null, fast = null, kids = null, hunter = null;
   for (const arr of sim.creatures) for (const c of arr) {
     if (c.dead || c.alpha) continue;
-    if (c.gen > gen) gen = c.gen;
+    if (c.gen > gen && c.sp < 3) gen = c.gen;
     if (!big || c.genes.size > big.genes.size) big = c;
     const v = P[SPECIES[c.sp].speed] * c.genes.speed;
     if (!fast || v > fast.v) fast = { v, c };
     if (!kids || c.kids > kids.kids) kids = c;
-    if (c.sp === 1 && (!hunter || c.kills > hunter.kills)) hunter = c;
+    if ((c.sp === 1 || c.sp === 4) && (!hunter || c.kills > hunter.kills)) hunter = c;
   }
   bumpRecord('gen', gen);
   if (big) bumpRecord('big', +big.genes.size.toFixed(2), big.name);
   if (fast) bumpRecord('fast', +fast.v.toFixed(1), fast.c.name);
   if (kids && kids.kids) bumpRecord('kids', kids.kids, kids.name);
   if (hunter && hunter.kills) bumpRecord('hunter', hunter.kills, hunter.name);
-  bumpRecord('pop', cnt.herb + cnt.pred + cnt.scav);
+  bumpRecord('pop', cnt.herb + cnt.pred + cnt.scav + cnt.bird + cnt.hum);
+  bumpRecord('humans', cnt.hum);
 }
 setInterval(() => { if (recDirty) { recDirty = false; storeSet('records', records); } }, 5000);
 
@@ -2177,7 +3139,11 @@ const CHALLENGES = [
   { id: 'equilibre', emo: '⚖️', title: 'Équilibriste', desc: 'Garde plantes, herbivores, prédateurs et charognards tous au-dessus de 8, le plus longtemps possible d’affilée.',
     setup: {}, tiers: [180, 360, 600], metric: () => chal.streak, limit: 900, f: fmtTime },
   { id: 'lignee', emo: '🧬', title: 'Grande lignée', desc: 'Atteins la génération la plus élevée possible en 10 minutes. Astuce : des animaux bien nourris font des petits plus vite !',
-    setup: {}, tiers: [24, 28, 32], metric: () => Math.max(...sim.maxGen), limit: 600, f: v => 'gén. ' + v },
+    setup: {}, tiers: [24, 28, 32], metric: () => Math.max(...sim.maxGen.slice(0, 3)), limit: 600, f: v => 'gén. ' + v },
+  { id: 'civ', emo: '🏛️', title: 'Civilisation', desc: 'Fais évoluer la tribu humaine le plus loin possible : grotte → champs → village → usines → écologie. Astuce : de la nourriture près du village et un lac plein aident ; l’âge écologique demande un respect de la nature ≥ 50 %.',
+    setup: {}, tiers: [2, 3, 4], metric: () => sim.tribe.era, limit: 540, fail: c => c.hum === 0, f: v => ERA[v].emo + ' ' + ERA[v].name.replace('Âge ', '') },
+  { id: 'propre', emo: '🌍', title: 'Planète propre', desc: 'Atteins l’âge industriel, puis garde la pollution sous 40 % tout en gardant des poissons dans le lac. Le score = le temps passé à l’âge industriel ou plus avec un air propre.',
+    setup: { techSpeed: 1.6 }, tiers: [120, 240, 330], metric: () => chal.clean || 0, limit: 600, fail: c => c.hum === 0, f: fmtTime },
   { id: 'dieu1', emo: '🙏', title: 'Jardinier divin', god: 100, desc: 'Mode Dieu : 100 points. Nourriture = 5, prédateur = 20, catastrophe ou surprise = 30. Fais monter les herbivores au maximum (compte dès 2:00) !',
     setup: { plantGrowth: 0.6 }, after: 120, tiers: [70, 85, 100], metric: c => c.herb, limit: 480, f: v => v + ' herbivores' },
   { id: 'dieu2', emo: '😈', title: 'Main de fer', god: 120, desc: 'Mode Dieu : 120 points. Fais grimper le nombre de prédateurs le plus haut possible (compte dès 1:00).',
@@ -2213,6 +3179,7 @@ function spend(cost, what) {
 function chalTick(cnt) {
   if (!chal || chal.done) return;
   const d = chal.def, dt = sim.t - chal.lastT; chal.lastT = sim.t;
+  if (d.id === 'propre' && sim.tribe.era >= 3 && sim.tribe.pol < 0.4 && cnt.fish > 0) chal.clean = (chal.clean || 0) + dt;
   // Survivant : on vérifie 20 s après chaque fin de catastrophe
   chal.pend = chal.pend.filter(t => { if (sim.t < t) return true; if (cnt.herb > 0 && cnt.pred > 0) { chal.survived++; toast('🌪️ Catastrophe surmontée !'); } return false; });
   if (cnt.plants >= 8 && cnt.herb >= 8 && cnt.pred >= 8 && cnt.scav >= 8) chal.streak += dt; else chal.streak = 0;
@@ -2355,6 +3322,7 @@ $('moreSheet').addEventListener('click', e => {
   if (k === 'chal') return openChallenges();
   if (k === 'rec') return openRecords();
   if (k === 'jour') return openJournal();
+  if (k === 'civ') return openCiv();
   closeMore();
   if (k === 'doc') setDoc(!doc.on);
   else if (k === 'sound') setSound(!audio.on);
@@ -2423,7 +3391,8 @@ function loadSharedWorld() {
 }
 
 /* ---------- Historique pour les courbes ---------- */
-const HKEYS = ['t', 'plants', 'herb', 'pred', 'scav', 'eH', 'eP', 'eS', 'hSpd', 'hVis', 'hSize', 'pSpd', 'pVis', 'pSize', 'sSpd', 'sVis', 'sSize'];
+const HKEYS = ['t', 'plants', 'herb', 'pred', 'scav', 'eH', 'eP', 'eS', 'hSpd', 'hVis', 'hSize', 'pSpd', 'pVis', 'pSize', 'sSpd', 'sVis', 'sSize',
+  'bird', 'hum', 'fish', 'eB', 'eU', 'bSpd', 'bVis', 'bSize', 'uSpd', 'uVis', 'uSize', 'food', 'wood', 'pol', 'water', 'era'];
 let H, sampleEvery, nextSample;
 function clearHistory() { H = Object.fromEntries(HKEYS.map(k => [k, []])); sampleEvery = 1; nextSample = 0; chart.dirty = true; }
 function recordSample() {
@@ -2435,7 +3404,7 @@ function recordSample() {
 // Fil d'actu : signale quand une espèce n'a jamais été aussi rapide / grosse
 const peaks = {};
 function checkPeaks() {
-  for (let sp = 0; sp < 3; sp++) for (const [k, word, emo] of [['speed', 'rapides', '⚡'], ['size', 'grands', '🐘']]) {
+  for (let sp = 0; sp < 4; sp++) for (const [k, word, emo] of [['speed', 'rapides', '⚡'], ['size', 'grands', '🐘']]) {
     const v = meanGene(sp, k), key = sp + k;
     if (peaks[key] == null) { peaks[key] = Math.max(v, 5); continue; }
     if (v > peaks[key] + 5) { peaks[key] = v; log(emo, `Les ${SPM[sp].label.toLowerCase()} n’ont jamais été aussi ${word} (+${Math.round(v)} %) !`); }
@@ -2443,14 +3412,16 @@ function checkPeaks() {
 }
 
 /* ---------- Courbes (canvas 2D, léger) ---------- */
-const COL = { plants: '#34c759', herb: '#3b82f6', pred: '#ff6b3d', scav: '#a2845e', spd: '#ff9f0a', vis: '#af52de', size: '#00a5a8', grid: 'rgba(60,60,67,.10)', axis: '#8e8e93' };
+const COL = { plants: '#34c759', herb: '#3b82f6', pred: '#ff6b3d', scav: '#a2845e', bird: '#0fb5ae', hum: '#c2410c', fish: '#38bdf8', food: '#e9734f', wood: '#8b5e3c', pol: '#6b6358', water: '#1d4ed8', spd: '#ff9f0a', vis: '#af52de', size: '#00a5a8', grid: 'rgba(60,60,67,.10)', axis: '#8e8e93' };
 const chart = { tab: 'pop', gsp: 0, cmp: 'herb', hidden: new Set(), span: null, end: null, dirty: true, open: false };
 let ref = storeGet('ref');
 function seriesFor() {
   switch (chart.tab) {
-    case 'pop': return [{ k: 'plants', l: 'Plantes', c: COL.plants }, { k: 'herb', l: 'Herbivores', c: COL.herb }, { k: 'pred', l: 'Prédateurs', c: COL.pred }, { k: 'scav', l: 'Charognards', c: COL.scav }];
-    case 'energy': return [{ k: 'eH', l: 'Herbivores', c: COL.herb }, { k: 'eP', l: 'Prédateurs', c: COL.pred }, { k: 'eS', l: 'Charognards', c: COL.scav }];
-    case 'genes': { const p = 'hps'[chart.gsp]; return [{ k: p + 'Spd', l: 'Vitesse', c: COL.spd, u: ' %' }, { k: p + 'Vis', l: 'Vision', c: COL.vis, u: ' %' }, { k: p + 'Size', l: 'Taille', c: COL.size, u: ' %' }]; }
+    case 'pop': return [{ k: 'plants', l: 'Plantes', c: COL.plants }, { k: 'herb', l: 'Herbivores', c: COL.herb }, { k: 'pred', l: 'Prédateurs', c: COL.pred }, { k: 'scav', l: 'Charognards', c: COL.scav },
+      { k: 'bird', l: 'Oiseaux', c: COL.bird }, { k: 'fish', l: 'Poissons', c: COL.fish }, { k: 'hum', l: 'Humains', c: COL.hum }];
+    case 'energy': return [{ k: 'eH', l: 'Herbivores', c: COL.herb }, { k: 'eP', l: 'Prédateurs', c: COL.pred }, { k: 'eS', l: 'Charognards', c: COL.scav }, { k: 'eB', l: 'Oiseaux', c: COL.bird }, { k: 'eU', l: 'Humains', c: COL.hum }];
+    case 'civ': return [{ k: 'hum', l: 'Humains', c: COL.hum }, { k: 'food', l: 'Nourriture', c: COL.food }, { k: 'wood', l: 'Bois', c: COL.wood }, { k: 'pol', l: 'Pollution', c: COL.pol, u: ' %' }, { k: 'water', l: 'Lac', c: COL.water, u: ' %' }, { k: 'fish', l: 'Poissons', c: COL.fish }];
+    case 'genes': { const p = 'hpsbu'[chart.gsp]; return [{ k: p + 'Spd', l: 'Vitesse', c: COL.spd, u: ' %' }, { k: p + 'Vis', l: 'Vision', c: COL.vis, u: ' %' }, { k: p + 'Size', l: 'Taille', c: COL.size, u: ' %' }]; }
     default: { const c = COL[chart.cmp]; return [{ k: chart.cmp, l: 'Actuel', c }, { k: chart.cmp, l: 'Référence', c, ref: true }]; }
   }
 }
@@ -2459,10 +3430,12 @@ function buildChartSub() {
   if (chart.tab === 'genes') {
     sub.innerHTML = SPM.map((s, i) => `<button class="chip ${chart.gsp === i ? 'on' : ''}" data-gsp="${i}">${s.label}</button>`).join('') + `<span class="note" style="margin:0 0 0 4px">100 % = départ</span>`;
   } else if (chart.tab === 'compare') {
-    const keys = [['herb', 'Herbiv.'], ['pred', 'Prédat.'], ['scav', 'Charogn.'], ['plants', 'Plantes']];
+    const keys = [['herb', 'Herbiv.'], ['pred', 'Prédat.'], ['scav', 'Charogn.'], ['bird', 'Oiseaux'], ['fish', 'Poissons'], ['hum', 'Humains'], ['plants', 'Plantes']];
     sub.innerHTML = keys.map(([k, l]) => `<button class="chip ${chart.cmp === k ? 'on' : ''}" data-cmp="${k}">${l}</button>`).join('') +
       `<button class="chip" id="bRef">📌 Mémoriser</button>` +
       `<div class="note" style="width:100%;margin:0 2px">${ref ? `Référence : <b>${esc(ref.label)}</b> · change les réglages, Reset, compare.` : '📌 garde cette partie comme référence → change les réglages → Reset → compare.'}</div>`;
+  } else if (chart.tab === 'civ') {
+    sub.innerHTML = '<span class="note" style="margin:0 2px">Réserves de la tribu, pollution et niveau du lac</span>';
   } else if (chart.tab === 'energy') {
     sub.innerHTML = '<span class="note" style="margin:0 2px">Énergie moyenne d’un individu</span>';
   } else sub.innerHTML = '<span class="note" style="margin:0 2px">Nombre d’individus vivants</span>';
@@ -2473,7 +3446,7 @@ $('chartSub').addEventListener('click', e => {
   else if (b.dataset.cmp) chart.cmp = b.dataset.cmp;
   else if (b.id === 'bRef') {
     if (H.t.length < 3) { toast('Laisse tourner la simulation quelques secondes'); return; }
-    ref = { label: `${ui.presetName} · ${fmtTime(sim.t)}`, t: H.t.slice(), plants: H.plants.slice(), herb: H.herb.slice(), pred: H.pred.slice(), scav: H.scav.slice() };
+    ref = { label: `${ui.presetName} · ${fmtTime(sim.t)}`, t: H.t.slice(), plants: H.plants.slice(), herb: H.herb.slice(), pred: H.pred.slice(), scav: H.scav.slice(), bird: H.bird.slice(), fish: H.fish.slice(), hum: H.hum.slice() };
     storeSet('ref', ref);
     toast('📌 Référence mémorisée');
   }
@@ -2627,7 +3600,9 @@ $('chartHandle').addEventListener('click', () => {
 });
 function exportCSV() {
   const head = ['temps_s', 'plantes', 'herbivores', 'predateurs', 'charognards', 'energie_moy_herbivores', 'energie_moy_predateurs', 'energie_moy_charognards',
-    'herb_vitesse_pct', 'herb_vision_pct', 'herb_taille_pct', 'pred_vitesse_pct', 'pred_vision_pct', 'pred_taille_pct', 'charo_vitesse_pct', 'charo_vision_pct', 'charo_taille_pct'];
+    'herb_vitesse_pct', 'herb_vision_pct', 'herb_taille_pct', 'pred_vitesse_pct', 'pred_vision_pct', 'pred_taille_pct', 'charo_vitesse_pct', 'charo_vision_pct', 'charo_taille_pct',
+    'oiseaux', 'humains', 'poissons', 'energie_moy_oiseaux', 'energie_moy_humains', 'oiseau_vitesse_pct', 'oiseau_vision_pct', 'oiseau_taille_pct', 'humain_vitesse_pct', 'humain_vision_pct', 'humain_taille_pct',
+    'nourriture_tribu', 'bois_tribu', 'pollution_pct', 'niveau_lac_pct', 'age_civilisation'];
   const f = v => v == null || Number.isNaN(v) ? '' : (+v.toFixed(2)).toString();
   let s = head.join(',') + '\n';
   for (let i = 0; i < H.t.length; i++) s += HKEYS.map(k => f(H[k][i])).join(',') + '\n';
@@ -2662,6 +3637,16 @@ const SECTIONS = [
   { id: 'herb', label: 'Herbivores', note: 'Ils cherchent les plantes et fuient les prédateurs qu’ils voient. Leurs oreilles grandissent avec la vision, leurs pattes avec la vitesse.', items: animalItems('h', { count: 150, speed: 7, vision: 20, gain: 60, repro: 150 }) },
   { id: 'pred', label: 'Prédateurs', note: 'Ils traquent discrètement, puis sprintent quand la proie est proche. Pattes longues = rapides, grandes oreilles = bonne vision.', items: animalItems('p', { count: 60, speed: 8, vision: 25, gain: 120, repro: 200 }) },
   { id: 'scav', label: 'Charognards', note: 'Ils volent jusqu’aux animaux morts pour les manger : ils nettoient l’île. Grandes ailes = rapides.', items: animalItems('s', { count: 60, speed: 7, vision: 25, gain: 80, repro: 150 }) },
+  { id: 'bird', label: 'Oiseaux', note: 'Ils nichent dans les grands arbres, mangent leurs fruits et pêchent dans le lac. En volant d’arbre en arbre, ils sèment des graines : plus d’oiseaux = plus de forêts.', items: animalItems('b', { count: 40, speed: 8, vision: 25, gain: 60, repro: 150 }) },
+  { id: 'hum', label: 'Humains', note: 'Une tribu qui part d’une grotte. En accumulant du savoir, elle invente l’agriculture, les maisons, les usines… puis l’énergie propre (si elle respecte la nature).', items: [
+    ...animalItems('u', { count: 30, speed: 6, vision: 25, gain: 80, repro: 150 }),
+    { k: 'techSpeed', l: 'Vitesse du progrès', min: 0.2, max: 4, step: 0.1, f: speedTxt },
+    { k: 'respect', l: 'Respect de la nature', min: 0, max: 1, step: 0.05, f: pct, hint: 'Haut = chassent et coupent moins, replantent. Il faut ≥ 50 % pour l’âge écologique' },
+  ] },
+  { id: 'lake', label: 'Lac', note: 'Le lac monte avec la pluie et baisse avec la sécheresse. Les poissons y vivent : ils ont besoin d’eau propre (la pollution les tue).', items: [
+    { k: 'fishCount', l: 'Poissons au départ', min: 0, max: 60, step: 1, f: v => v, reset: true },
+    { k: 'fishMax', l: 'Poissons maximum', min: 5, max: 80, step: 1, f: v => v },
+  ] },
   { id: 'evo', label: 'Évolution', note: 'Chaque petit reçoit les gènes de son parent (vitesse, vision, taille). Le taux = la chance que chaque gène change ; la force = de combien il peut changer. Être grand rend plus fort, mais coûte plus d’énergie. Parfois, une mutation rare apparaît : doré, lumineux ou géant !', items: [
     { k: 'mutRate', l: 'Taux de mutation', min: 0, max: 1, step: 0.01, f: pct },
     { k: 'mutStrength', l: 'Force de la mutation', min: 0, max: 0.5, step: 0.01, f: v => '± ' + pct(v) },
@@ -2842,6 +3827,7 @@ function frame(now) {
   nShadow = 0;
   updatePlants(time); updateCarcasses();
   updateAnimals(dtR, simDt, time);
+  updateWater(dtR, time); updateFishR(time); updateBirdsR(dtR, time); updateHumansR(dtR, simDt, time); updateBuildingsR(dtR, time);
   shadowMesh.count = nShadow; flush(shadowMesh);
   updateParticles(dtR); updateRipples(dtR); updateClouds(dtR); updateComet(dtR);
   updateFall(rain, fxAmt.rain, dtR, false); updateFall(snow, fxAmt.snow, dtR, true);
@@ -2857,6 +3843,8 @@ function frame(now) {
     uiT = 0;
     const c = sim.counts();
     $('nPlants').textContent = c.plants; $('nHerbs').textContent = c.herb; $('nPreds').textContent = c.pred; $('nScavs').textContent = c.scav;
+    $('nBirds').textContent = c.bird; $('nFish').textContent = c.fish; $('nHums').textContent = c.hum;
+    updateCivPill(c);
     $('simTime').textContent = fmtTime(sim.t);
     $('dayIcon').textContent = !P.dayNight ? '☀️' : daylight > 0.6 ? '☀️' : daylight > 0.25 ? '🌅' : '🌙';
     const cat = sim.cat, bn = $('catBanner');
@@ -2893,7 +3881,7 @@ unread = 0; updateBadges();
 // Mesure du coût de calcul (simulation + mise à jour 3D) sans le dessin, en ms par image
 function bench(n = 120) {
   const t0 = performance.now();
-  for (let i = 0; i < n; i++) { sim.step(1 / 30); handleEvents(); nShadow = 0; updatePlants(i); updateCarcasses(); updateAnimals(1 / 60, 1 / 30, i); }
+  for (let i = 0; i < n; i++) { sim.step(1 / 30); handleEvents(); nShadow = 0; updatePlants(i); updateCarcasses(); updateAnimals(1 / 60, 1 / 30, i); updateWater(1 / 60, i); updateFishR(i); updateBirdsR(1 / 60, i); updateHumansR(1 / 60, 1 / 30, i); updateBuildingsR(1 / 60, i); }
   return (performance.now() - t0) / n;
 }
 window.__eco = { bench, sim, camera, controls, select, deselect, pickAnimal, groundAt, onTap, exportCSV, startChallenge, quitChallenge, CHALLENGES, openFamily, openJournal, openRecords, openChallenges, takePhoto, worldLink, setDoc, journal, records,
